@@ -1,0 +1,3081 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Reactor Batch Social (2S ⇌ L* → P)</title>
+
+  <!-- Tipografías técnicas para exposición académica -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Plotly.js para gráficas interactivas de ingeniería -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <style>
+    html, body {
+      overflow-x: hidden;
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
+    canvas.pixel-canvas {
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    input[type="range"] {
+      accent-color: #4f46e5;
+    }
+
+    .advanced-panel {
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    /* Marco cálido GBA para enmarcar el aula Minish Cap */
+    .gba-frame {
+      background: linear-gradient(180deg, #2d202b 0%, #211824 100%);
+      box-shadow: inset 0 0 0 1px rgba(242, 201, 107, 0.22);
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- ======================================================================= -->
+  <!-- ENCABEZADO SUPERIOR CON INTERRUPTOR DE MODO INTERMEDIO / AVANZADO       -->
+  <!-- ======================================================================= -->
+  <header class="sticky top-0 z-30 border-b border-slate-300/90 bg-white/95 shadow-sm backdrop-blur-md">
+    <div class="mx-auto flex max-w-[1520px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <!-- Marca y título -->
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-300/80 bg-amber-50 text-amber-700 shadow-sm">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6m-5 0v5.172a2 2 0 0 1-.586 1.414L4.828 14.172A4 4 0 0 0 7.657 21h8.686a4 4 0 0 0 2.829-6.828l-4.586-4.586A2 2 0 0 1 14 8.172V3" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 16h9" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <h1 class="truncate text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">
+            Simulador de Reactor Batch Social
+          </h1>
+          <p class="truncate text-xs text-slate-600">
+            Mecanismo: <span class="font-mono font-semibold text-indigo-700">2S ⇌ L* → P</span>
+            <span class="mx-1.5 text-slate-300">|</span>
+            Estequiometría normalizada: <span class="font-mono font-semibold text-slate-800">S → ½P</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Interruptor prominente: Modo Avanzado (APAGADO por defecto) -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <span id="mode-pill" class="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+          Vista Base: Modelo AEPE
+        </span>
+
+        <label for="toggle-advanced" class="inline-flex cursor-pointer items-center gap-2.5 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 shadow-sm transition hover:border-teal-400 hover:bg-teal-50/40 select-none">
+          <span class="text-xs font-semibold text-slate-800">
+            Modo Avanzado <span class="hidden font-normal text-slate-500 sm:inline">(EDOs Exactas + Monte Carlo)</span>
+          </span>
+          <div class="relative shrink-0">
+            <input id="toggle-advanced" type="checkbox" class="peer sr-only" />
+            <div class="h-6 w-11 rounded-full bg-slate-300 transition-colors peer-checked:bg-teal-600 peer-focus:ring-2 peer-focus:ring-teal-500/40"></div>
+            <div class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></div>
+          </div>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenedor de notificaciones toast (reemplazo seguro de alert) -->
+  <div id="toast-container" class="pointer-events-none fixed bottom-4 right-4 z-50 flex max-w-sm flex-col gap-2"></div>
+
+  <!-- ======================================================================= -->
+  <!-- CUERPO PRINCIPAL RESPONSIVO (con min-w-0 anti-desbordamiento)           -->
+  <!-- ======================================================================= -->
+  <main class="mx-auto max-w-[1520px] px-3 py-5 sm:px-5 lg:px-6">
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
+
+      <!-- =================================================================== -->
+      <!-- BARRA LATERAL IZQUIERDA: Controles y Resumen Modelo Base (AEPE)     -->
+      <!-- =================================================================== -->
+      <aside class="min-w-0 space-y-4 lg:col-span-4 xl:col-span-3">
+
+        <!-- 1. Escenarios Predefinidos -->
+        <section class="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+          <div class="mb-2.5 flex items-center justify-between gap-2">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Escenarios Predefinidos</h2>
+            <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-600">τ = 1.0 mes</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <button data-preset="p1" class="preset-btn min-w-0 rounded-xl border border-slate-300 bg-slate-50 px-1.5 py-2 text-center text-xs font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50/50">
+              <div class="truncate">+1 Pareja</div>
+              <div class="mt-0.5 font-mono text-[10px] font-normal text-slate-500">k₁=0.110</div>
+            </button>
+            <button data-preset="realista" class="preset-btn min-w-0 rounded-xl border-2 border-indigo-600 bg-indigo-50 px-1.5 py-2 text-center text-xs font-bold text-indigo-800 shadow-sm transition">
+              <div class="truncate">Realista (+1.5)</div>
+              <div class="mt-0.5 font-mono text-[10px] font-medium text-indigo-600">k₁=0.170</div>
+            </button>
+            <button data-preset="p2" class="preset-btn min-w-0 rounded-xl border border-slate-300 bg-slate-50 px-1.5 py-2 text-center text-xs font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50/50">
+              <div class="truncate">+2 Parejas</div>
+              <div class="mt-0.5 font-mono text-[10px] font-normal text-slate-500">k₁=0.232</div>
+            </button>
+          </div>
+        </section>
+
+        <!-- 2. Alimentación y Tiempo -->
+        <section class="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+          <h2 class="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">1. Alimentación y Tiempo</h2>
+          <div class="space-y-3.5">
+            <!-- N_S0 -->
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+                <label for="num-nso" class="font-medium text-slate-700">Solteros iniciales (<span class="font-mono font-semibold text-indigo-700">N<sub>S0</sub></span>)</label>
+                <input id="num-nso" type="number" min="4" max="120" step="1" value="38" class="w-16 shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-2 py-0.5 text-right font-mono text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none" />
+              </div>
+              <input id="rng-nso" type="range" min="4" max="120" step="1" value="38" class="w-full cursor-pointer" />
+            </div>
+
+            <!-- N_P0 -->
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+                <label for="num-npo" class="font-medium text-slate-700">Parejas iniciales (<span class="font-mono font-semibold text-rose-600">N<sub>P0</sub></span>)</label>
+                <input id="num-npo" type="number" min="0" max="30" step="1" value="1" class="w-16 shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-2 py-0.5 text-right font-mono text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none" />
+              </div>
+              <input id="rng-npo" type="range" min="0" max="30" step="1" value="1" class="w-full cursor-pointer" />
+            </div>
+
+            <!-- Duración t en meses -->
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+                <label for="num-meses" class="font-medium text-slate-700">Duración <span class="font-mono font-semibold text-slate-800">t</span> (meses)</label>
+                <input id="num-meses" type="number" min="1" max="24" step="1" value="6" class="w-16 shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-2 py-0.5 text-right font-mono text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none" />
+              </div>
+              <input id="rng-meses" type="range" min="1" max="24" step="1" value="6" class="w-full cursor-pointer" />
+              <div class="mt-0.5 text-right font-mono text-[10px] text-slate-500">1 mes = 30 días · Total: <span id="lbl-total-days">180</span> días</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Dimensiones del Salón -->
+        <section class="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Dimensiones del Salón (m)</h2>
+          </div>
+          <div class="space-y-3">
+            <!-- Largo L -->
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+                <label for="num-L" class="font-medium text-slate-700">Largo <span class="font-mono font-semibold">L</span> (m)</label>
+                <input id="num-L" type="number" min="3" max="15" step="0.5" value="6" class="w-16 shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-2 py-0.5 text-right font-mono text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none" />
+              </div>
+              <input id="rng-L" type="range" min="3" max="15" step="0.5" value="6" class="w-full cursor-pointer" />
+            </div>
+
+            <!-- Ancho W -->
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+                <label for="num-W" class="font-medium text-slate-700">Ancho <span class="font-mono font-semibold">W</span> (m)</label>
+                <input id="num-W" type="number" min="3" max="15" step="0.5" value="5" class="w-16 shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-2 py-0.5 text-right font-mono text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none" />
+              </div>
+              <input id="rng-W" type="range" min="3" max="15" step="0.5" value="5" class="w-full cursor-pointer" />
+            </div>
+
+            <!-- Altura H -->
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+                <label for="num-H" class="font-medium text-slate-700">Altura <span class="font-mono font-semibold">H</span> (m)</label>
+                <input id="num-H" type="number" min="2" max="10" step="0.5" value="3" class="w-16 shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-2 py-0.5 text-right font-mono text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none" />
+              </div>
+              <input id="rng-H" type="range" min="2" max="10" step="0.5" value="3" class="w-full cursor-pointer" />
+            </div>
+          </div>
+
+          <!-- Lecturas calculadas V y C_S0 -->
+          <div class="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs">
+            <div class="min-w-0">
+              <div class="text-[10px] text-slate-500">Volumen (V)</div>
+              <div id="readout-V" class="truncate font-bold text-slate-900">90.0 m³</div>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[10px] text-slate-500">Conc. inicial (C<sub>S0</sub>)</div>
+              <div id="readout-Cso" class="truncate font-bold text-indigo-700">0.422 pers/m³</div>
+            </div>
+          </div>
+
+          <!-- Nota de ingeniería condicional cuando H > 5 m -->
+          <div id="height-note" class="mt-3 hidden rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-[11px] leading-relaxed text-amber-900">
+            <strong class="font-bold text-amber-800">Nota de ingeniería (H &gt; 5 m):</strong> En el modelo volumétrico 3D (<span class="font-mono">C<sub>S</sub> = N<sub>S</sub>/V</span>), elevar el techo diluye la concentración aunque los alumnos sigan desplazándose sobre un piso 2D.
+          </div>
+        </section>
+
+        <!-- 4. Constantes Cinéticas -->
+        <section class="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+          <h2 class="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">3. Constantes Cinéticas (mensual)</h2>
+          <div class="space-y-3">
+            <!-- k1 -->
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+                <label for="num-k1" class="min-w-0 truncate font-medium text-slate-700">
+                  <span class="font-mono font-bold text-indigo-700">k<sub>1</sub></span>
+                  <span class="text-[10px] text-slate-500">m³/(pers·mes)</span>
+                </label>
+                <input id="num-k1" type="number" min="0.005" max="2.0" step="0.005" value="0.170" class="w-20 shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-2 py-0.5 text-right font-mono text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none" />
+              </div>
+              <input id="rng-k1" type="range" min="0.005" max="0.80" step="0.005" value="0.170" class="w-full cursor-pointer" />
+            </div>
+
+            <!-- k2 -->
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+                <label for="num-k2" class="min-w-0 truncate font-medium text-slate-700">
+                  <span class="font-mono font-bold text-amber-700">k<sub>2</sub></span>
+                  <span class="text-[10px] text-slate-500">ruptura (mes⁻¹)</span>
+                </label>
+                <input id="num-k2" type="number" min="0.00" max="5.0" step="0.05" value="0.80" class="w-20 shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-2 py-0.5 text-right font-mono text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none" />
+              </div>
+              <input id="rng-k2" type="range" min="0.00" max="3.0" step="0.05" value="0.80" class="w-full cursor-pointer" />
+            </div>
+
+            <!-- k3 -->
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+                <label for="num-k3" class="min-w-0 truncate font-medium text-slate-700">
+                  <span class="font-mono font-bold text-rose-600">k<sub>3</sub></span>
+                  <span class="text-[10px] text-slate-500">pareja (mes⁻¹)</span>
+                </label>
+                <input id="num-k3" type="number" min="0.00" max="3.0" step="0.05" value="0.20" class="w-20 shrink-0 rounded-lg border border-slate-300 bg-slate-50 px-2 py-0.5 text-right font-mono text-xs font-semibold text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none" />
+              </div>
+              <input id="rng-k3" type="range" min="0.00" max="1.5" step="0.05" value="0.20" class="w-full cursor-pointer" />
+            </div>
+          </div>
+
+          <!-- Lecturas calculadas K', tau, f -->
+          <div class="mt-3 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-slate-500">K' = k₁k₃/(k₂+k₃)</span>
+              <span id="readout-Kprime" class="font-bold text-indigo-700">0.0340</span>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-slate-500">Vida media τ<sub>L*</sub></span>
+              <span id="readout-tau" class="font-bold text-amber-700">1.00 mes</span>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-slate-500">Selectividad f</span>
+              <span id="readout-sel" class="font-bold text-rose-600">20.0%</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. Resumen del Modelo Base (AEPE) -->
+        <section class="rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4 shadow-sm">
+          <div class="mb-2 flex items-center justify-between gap-2">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-900">Resumen del Modelo Base (AEPE)</h2>
+            <span class="shrink-0 rounded border border-indigo-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-indigo-700">Analítico</span>
+          </div>
+          <div class="space-y-1.5 rounded-xl border border-indigo-200/80 bg-white/90 p-3 font-mono text-[11px] leading-relaxed text-slate-800">
+            <div><span class="font-bold text-indigo-700">K'</span> = (k₁ · k₃) / (k₂ + k₃)</div>
+            <div><span class="font-bold text-indigo-700">X(t)</span> = (K' · C<sub>S0</sub> · t) / (1 + K' · C<sub>S0</sub> · t)</div>
+            <div><span class="font-bold text-rose-600">N<sub>P</sub>(t)</span> = N<sub>P0</sub> + (N<sub>S0</sub> / 2) · X(t)</div>
+            <div><span class="font-bold text-slate-700">N<sub>S</sub>(t)</span> = N<sub>S0</sub> · (1 − X(t))</div>
+          </div>
+          <p class="mt-2 text-[11px] leading-snug text-indigo-900/80">
+            Balance batch a volumen constante con aproximación de estado pseudoestacionario (<span class="font-mono">r<sub>L*</sub> ≈ 0</span>).
+          </p>
+        </section>
+
+      </aside>
+
+      <!-- =================================================================== -->
+      <!-- COLUMNA DERECHA: Escenario Pixel Art GBA + Gráficas + Modo Avanzado -->
+      <!-- =================================================================== -->
+      <div class="min-w-0 space-y-5 lg:col-span-8 xl:col-span-9">
+
+        <!-- ================================================================= -->
+        <!-- TARJETA 1: AULA PIXEL ART GBA (MINISH CAP) + KPIs + CONTROLES     -->
+        <!-- ================================================================= -->
+        <section class="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
+
+          <!-- Franja de 5 KPIs en vivo (responsiva sin recortes en 1280px-1440px) -->
+          <div class="grid grid-cols-2 gap-2 border-b border-slate-200 bg-slate-50/90 p-3 sm:grid-cols-3 xl:grid-cols-5">
+            <div class="min-w-0 rounded-xl border border-slate-200 bg-white px-2.5 py-2">
+              <div class="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-500">Día / Mes</div>
+              <div id="kpi-day" class="mt-0.5 truncate font-mono text-sm font-bold text-slate-900">Día 0 / 180</div>
+              <div id="kpi-month" class="truncate font-mono text-[10px] text-slate-500">Mes 0.0 · 08:00</div>
+            </div>
+            <div class="min-w-0 rounded-xl border border-indigo-200/80 bg-indigo-50/40 px-2.5 py-2">
+              <div class="truncate text-[10px] font-semibold uppercase tracking-wide text-indigo-700">Solteros (N<sub>S</sub>)</div>
+              <div id="kpi-ns" class="mt-0.5 font-mono text-lg font-extrabold text-indigo-900">38</div>
+            </div>
+            <div class="min-w-0 rounded-xl border border-amber-200/90 bg-amber-50/50 px-2.5 py-2">
+              <div class="truncate text-[10px] font-semibold uppercase tracking-wide text-amber-700">Ligues (N<sub>L*</sub>)</div>
+              <div id="kpi-nl" class="mt-0.5 font-mono text-lg font-extrabold text-amber-800">0</div>
+            </div>
+            <div class="min-w-0 rounded-xl border border-rose-200/90 bg-rose-50/50 px-2.5 py-2">
+              <div class="truncate text-[10px] font-semibold uppercase tracking-wide text-rose-700">Parejas (N<sub>P</sub>)</div>
+              <div id="kpi-np" class="mt-0.5 font-mono text-lg font-extrabold text-rose-700">1</div>
+            </div>
+            <div class="col-span-2 flex min-w-0 flex-col justify-center rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-2 sm:col-span-2 xl:col-span-1">
+              <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
+                <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500"></span>
+                <span class="truncate">Balance Cerrado</span>
+              </div>
+              <div id="kpi-balance" class="mt-0.5 truncate font-mono text-sm font-extrabold text-emerald-900">40 / 40 pers.</div>
+              <div class="truncate font-mono text-[9px] text-emerald-700">N<sub>S</sub>+2N<sub>L*</sub>+2N<sub>P</sub></div>
+            </div>
+          </div>
+
+          <!-- Marco oscuro cálido/dorado GBA que enmarca el aula pixel art -->
+          <div class="gba-frame border-y-2 border-amber-800/50">
+            <!-- Barra superior DENTRO del visor (evita cualquier recorte de la insignia Día/Noche) -->
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/15 bg-[#1b131e]/90 px-3.5 py-2 text-[11px]">
+              <div class="flex flex-wrap items-center gap-2 font-mono text-amber-100/90">
+                <span class="inline-flex items-center gap-1.5 rounded-md border border-amber-400/30 bg-amber-900/35 px-2 py-0.5 text-[10px] font-bold tracking-wide text-amber-200">
+                  AULA VIRTUAL GBA · 2.5D
+                </span>
+                <span id="viewer-dims-badge" class="text-amber-100/80">L=6.0m × W=5.0m × H=3.0m · V=90.0 m³</span>
+              </div>
+              <div id="lighting-badge" class="inline-flex items-center gap-1.5 rounded-md border border-amber-300/25 bg-[#2a1f30] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-amber-100">
+                ☀ Mañana · 08:00 · Batch Isotérmico
+              </div>
+            </div>
+
+            <!-- Lienzo Pixel Art Auténtico (offscreen GBA -> display crisp) -->
+            <div id="canvas-wrapper" class="relative w-full bg-[#231a29]" style="aspect-ratio: 16 / 10; min-height: 310px; max-height: 540px;">
+              <canvas id="classroom-canvas" class="pixel-canvas block h-full w-full"></canvas>
+            </div>
+          </div>
+
+          <!-- Ticker discreto del último evento (flex-wrap anti-recorte) -->
+          <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-slate-200 bg-slate-50 px-3.5 py-2 text-xs">
+            <div class="flex min-w-0 flex-1 items-center gap-2">
+              <span class="inline-flex h-2 w-2 shrink-0 rounded-full bg-indigo-500"></span>
+              <span class="shrink-0 font-semibold text-slate-600">Último evento:</span>
+              <span id="event-ticker" class="min-w-0 break-words font-medium text-slate-900">Día 0: Reactor batch cerrado e inicializado (38 solteros, 1 pareja).</span>
+            </div>
+            <div class="flex shrink-0 flex-wrap items-center gap-3 font-mono text-[11px] text-slate-600">
+              <span class="rounded bg-amber-50 px-1.5 py-0.5 border border-amber-200/70">2S→L*: <strong id="cnt-ligues" class="text-amber-800">0</strong></span>
+              <span class="rounded bg-slate-100 px-1.5 py-0.5 border border-slate-200">L*→2S: <strong id="cnt-breaks" class="text-slate-800">0</strong></span>
+              <span class="rounded bg-rose-50 px-1.5 py-0.5 border border-rose-200/70">L*→P: <strong id="cnt-couples" class="text-rose-700">0</strong></span>
+            </div>
+          </div>
+
+          <!-- Barra de controles de reproducción y leyenda de sprites -->
+          <div class="flex flex-wrap items-center justify-between gap-3 p-3.5">
+            <!-- Botones principales -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btn-play" class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 active:scale-95">
+                <svg id="icon-play" class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <span id="txt-play">Iniciar</span>
+              </button>
+              <button id="btn-step" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95">
+                Paso +1 día
+              </button>
+              <button id="btn-reset" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95">
+                Reiniciar
+              </button>
+            </div>
+
+            <!-- Selector de velocidad (1x, 2x, 5x, 15x, 30x) y toggle Luz Día/Noche -->
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="inline-flex flex-wrap items-center rounded-xl border border-slate-300 bg-slate-100 p-0.5 font-mono text-xs">
+                <button data-speed="1"  class="speed-btn rounded-lg px-2 py-1 font-semibold text-slate-600 transition hover:text-slate-900">1x</button>
+                <button data-speed="2"  class="speed-btn rounded-lg bg-white px-2 py-1 font-bold text-indigo-700 shadow-sm transition">2x</button>
+                <button data-speed="5"  class="speed-btn rounded-lg px-2 py-1 font-semibold text-slate-600 transition hover:text-slate-900">5x</button>
+                <button data-speed="15" class="speed-btn rounded-lg px-2 py-1 font-semibold text-slate-600 transition hover:text-slate-900">15x</button>
+                <button data-speed="30" class="speed-btn rounded-lg px-2 py-1 font-semibold text-slate-600 transition hover:text-slate-900">30x</button>
+              </div>
+
+              <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-700 select-none">
+                <input id="chk-daynight" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                <span>Luz Día/Noche</span>
+              </label>
+            </div>
+
+            <!-- Leyenda de los 3 diseños chibi GBA -->
+            <div class="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-slate-100 pt-2.5 text-xs text-slate-600">
+              <span class="font-semibold text-slate-700">Especies en el aula:</span>
+              <span class="inline-flex items-center gap-1.5">
+                <span class="inline-block h-3 w-3 rounded-sm border border-[#1d263b] bg-[#3675b8]"></span>
+                <strong>Soltero (S)</strong>: túnicas variadas caminando por el salón
+              </span>
+              <span class="inline-flex items-center gap-1.5">
+                <span class="inline-block h-3 w-3 rounded-sm border border-[#382018] bg-[#f2b63d]"></span>
+                <strong>Ligue (L*)</strong>: frente a frente con rubor y medio corazón / chispas
+              </span>
+              <span class="inline-flex items-center gap-1.5">
+                <span class="inline-block h-3 w-3 rounded-sm border border-[#2e1d30] bg-[#d9384d]"></span>
+                <strong>Pareja (P)</strong>: juntos en carmesí/dorado con Contenedor de Corazón
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TARJETA 2: GRÁFICA INTERACTIVA PLOTLY.JS + RESUMEN BASE (2 FILAS) -->
+        <!-- ================================================================= -->
+        <section class="min-w-0 rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+          <!-- Pestañas de variables y controles de cuadrícula -->
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button data-chart="pairs" class="chart-tab rounded-xl border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition">
+                Parejas (N<sub>P</sub>) y Ligues (N<sub>L*</sub>)
+              </button>
+              <button data-chart="singles" class="chart-tab rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100">
+                Solteros (N<sub>S</sub>)
+              </button>
+              <button data-chart="conversion" class="chart-tab rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100">
+                Conversión (X)
+              </button>
+            </div>
+
+            <!-- Controles de cuadrícula y minor ticks -->
+            <div class="flex flex-wrap items-center gap-3 text-xs text-slate-700">
+              <label class="inline-flex cursor-pointer items-center gap-1.5 select-none">
+                <input id="chk-major-grid" type="checkbox" checked class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+                <span>Cuadrícula mayor</span>
+              </label>
+              <label class="inline-flex cursor-pointer items-center gap-1.5 select-none">
+                <input id="chk-minor-grid" type="checkbox" checked class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+                <span>Cuadrícula menor</span>
+              </label>
+              <label class="inline-flex cursor-pointer items-center gap-1.5 select-none">
+                <input id="chk-minor-ticks" type="checkbox" checked class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+                <span>Marcas secundarias</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Lienzo Plotly -->
+          <div id="plotly-chart" class="w-full min-w-0" style="height: 380px;"></div>
+
+          <!-- Tarjeta de resumen simplificada (Vista Base: 2 filas limpias) -->
+          <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600">Resumen Base (AEPE vs Corrida Actual)</h3>
+              <span id="base-summary-sub" class="font-mono text-[11px] text-slate-500">Horizonte: 6 meses (180 días)</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse text-left font-mono text-xs">
+                <thead>
+                  <tr class="border-b border-slate-200 text-[11px] text-slate-500">
+                    <th class="py-1.5 pr-3 font-sans font-semibold">Serie</th>
+                    <th class="px-2 py-1.5 text-right font-semibold text-indigo-700">Solteros (N<sub>S</sub>)</th>
+                    <th class="px-2 py-1.5 text-right font-semibold text-amber-700">Ligues (N<sub>L*</sub>)</th>
+                    <th class="px-2 py-1.5 text-right font-semibold text-rose-600">Parejas (N<sub>P</sub>)</th>
+                    <th class="px-2 py-1.5 text-right font-semibold text-emerald-700">Nuevas (ΔN<sub>P</sub>)</th>
+                    <th class="pl-2 py-1.5 text-right font-semibold text-slate-700">Conversión X</th>
+                  </tr>
+                </thead>
+                <tbody id="base-summary-tbody" class="divide-y divide-slate-200/80 text-slate-800">
+                  <!-- Rellenado dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TARJETA 3 (MODO AVANZADO): ANÁLISIS SIN AEPE + MONTE CARLO + CSV  -->
+        <!-- Oculta por defecto; se revela al encender el interruptor superior -->
+        <!-- ================================================================= -->
+        <section id="advanced-section" class="advanced-panel hidden min-w-0 rounded-2xl border-2 border-teal-500/40 bg-white p-5 shadow-md">
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="rounded-md bg-teal-100 px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-teal-800">Modo Avanzado</span>
+                <h2 class="text-sm font-extrabold text-slate-900 sm:text-base">Análisis Avanzado de Ingeniería (Comparación sin AEPE)</h2>
+              </div>
+              <p class="mt-0.5 text-xs text-slate-600">
+                Integración numérica RK4 del sistema de 3 EDOs acopladas y promedio estadístico de 50 corridas exactas de Gillespie.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btn-recalc-mc" class="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-teal-700 active:scale-95">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15" />
+                </svg>
+                Recalcular Monte Carlo (50 corridas)
+              </button>
+              <button id="btn-export-csv" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5m0 0 5-5m-5 5V3" />
+                </svg>
+                Exportar CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Diagnóstico de Validez de la AEPE -->
+          <div class="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Diagnóstico de Validez de la AEPE</h3>
+              <span id="aepe-badge" class="rounded-full border border-emerald-300 bg-emerald-100 px-3 py-0.5 font-mono text-[11px] font-bold text-emerald-800">
+                AEPE Válida
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 font-mono sm:grid-cols-3">
+              <div class="rounded-xl border border-slate-200 bg-white p-3">
+                <div class="font-sans text-[10px] font-semibold uppercase text-slate-500">Relación τ<sub>L*</sub> / t<sub>total</sub></div>
+                <div id="diag-tau-ratio" class="mt-1 text-base font-extrabold text-slate-900">16.7%</div>
+                <div class="text-[10px] text-slate-500">Periodo de inducción relativo</div>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-white p-3">
+                <div class="font-sans text-[10px] font-semibold uppercase text-slate-500">Pico de solteros en L*</div>
+                <div id="diag-hold" class="mt-1 text-base font-extrabold text-slate-900">6.8%</div>
+                <div class="text-[10px] text-slate-500">2 · N<sub>L*,máx</sub> / N<sub>S0</sub></div>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-white p-3">
+                <div class="font-sans text-[10px] font-semibold uppercase text-slate-500">Brecha ΔN<sub>P</sub> (AEPE − EDO)</div>
+                <div id="diag-gap" class="mt-1 text-base font-extrabold text-teal-700">+0.27 parejas</div>
+                <div class="text-[10px] text-slate-500">Desfase por transitorio inicial</div>
+              </div>
+            </div>
+
+            <!-- Alertas operativas específicas (C_S0 > 0.8 o H > 5 m) -->
+            <div id="diag-warnings" class="mt-3 space-y-2"></div>
+
+            <p id="diag-explanation" class="mt-3 text-xs leading-relaxed text-slate-700">
+              Al iniciar el reactor con <span class="font-mono font-semibold">N<sub>L*</sub>(0) = 0</span>, las EDOs exactas y el promedio Monte Carlo presentan un breve periodo de inducción mientras se acumulan los primeros ligues activos, por lo que quedan ligeramente por debajo de la curva analítica AEPE.
+            </p>
+          </div>
+
+          <!-- Tabla Comparativa Completa (4 modelos) -->
+          <div>
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Tabla Comparativa Completa (al final del periodo)</h3>
+              <span id="adv-table-note" class="font-mono text-[11px] text-slate-500">t = 6 meses (Día 180)</span>
+            </div>
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+              <table class="w-full border-collapse text-left font-mono text-xs">
+                <thead class="bg-slate-100 text-[11px] text-slate-600">
+                  <tr>
+                    <th class="px-3 py-2.5 font-sans font-bold">Modelo</th>
+                    <th class="px-2.5 py-2.5 text-right font-bold text-indigo-700">N<sub>S</sub></th>
+                    <th class="px-2.5 py-2.5 text-right font-bold text-amber-700">N<sub>L*</sub></th>
+                    <th class="px-2.5 py-2.5 text-right font-bold text-rose-600">N<sub>P</sub></th>
+                    <th class="px-2.5 py-2.5 text-right font-bold text-emerald-700">ΔN<sub>P</sub></th>
+                    <th class="px-2.5 py-2.5 text-right font-bold text-slate-700">X (%)</th>
+                    <th class="px-3 py-2.5 text-right font-bold text-slate-700">Balance Total</th>
+                  </tr>
+                </thead>
+                <tbody id="advanced-tbody" class="divide-y divide-slate-200 bg-white text-slate-800">
+                  <!-- Rellenado dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      // =========================================================================
+      // 1. PARÁMETROS, PRESETS Y ESTADO GLOBAL DE LA SIMULACIÓN
+      // =========================================================================
+      const PRESETS = {
+        p1:       { k1: 0.110, k2: 0.80, k3: 0.20, label: '+1 Pareja (Exacto AEPE)' },
+        realista: { k1: 0.170, k2: 0.80, k3: 0.20, label: 'Realista (+1.5 parejas)' },
+        p2:       { k1: 0.232, k2: 0.80, k3: 0.20, label: '+2 Parejas (Exacto AEPE)' }
+      };
+
+      const params = {
+        Nso: 38,
+        Npo: 1,
+        months: 6,
+        L: 6,
+        W: 5,
+        H: 3,
+        k1: 0.170, // m^3 / (persona * mes)
+        k2: 0.80,  // mes^-1
+        k3: 0.20   // mes^-1
+      };
+
+      const state = {
+        advancedMode: false,    // APAGADO por defecto (Vista Base AEPE)
+        running: false,
+        speed: 2,               // días por segundo (1, 2, 5, 15, 30)
+        dayNightEnabled: true,
+        simTime: 0,             // días continuos (0 .. totalDays)
+        currentDay: 0,          // entero discreto ya procesado
+        totalDays: 180,
+        activeChart: 'pairs',
+        showMajorGrid: true,
+        showMinorGrid: true,
+        showMinorTicks: true,
+
+        // Arreglos diarios (0 .. totalDays)
+        daysArr: [],
+        aepe: { Ns: [], NlRef: [], Np: [], X: [] },
+        rk4:  { Ns: [], Nl: [], Np: [], X: [] },
+        stoch: { days: [], Ns: [], Nl: [], Np: [], X: [] },
+        mc: null, // { runs, Ns, Nl, Np, stdNp, X }
+
+        // Contadores de eventos de la corrida actual
+        counts: { ligues: 0, breaks: 0, couples: 0 },
+        lastEventText: '',
+
+        // Entidades del aula Pixel Art 2.5D estilo GBA Minish Cap
+        agents: [],
+        ligues: [],
+        couples: [],
+        particles: [],
+        desks: [],
+        clouds: [
+          { x: 0.12, y: 0.24, w: 0.30, speed: 0.016 },
+          { x: 0.62, y: 0.44, w: 0.26, speed: 0.011 }
+        ],
+        nextPairId: 1
+      };
+
+      // =========================================================================
+      // 2. CÁLCULOS DERIVADOS Y MOTORES MATEMÁTICOS EXACTOS (NO ALTERADOS)
+      // =========================================================================
+      function getDerived() {
+        const V = Math.max(1, params.L * params.W * params.H);
+        const Cso = params.Nso / V;
+        const kSumRaw = params.k2 + params.k3;
+        const kSum = Math.max(1e-6, kSumRaw);
+        const Kprime = kSumRaw > 0 ? (params.k1 * params.k3) / kSum : 0;
+        const tauMonths = kSumRaw > 0 ? 1 / kSum : Infinity;
+        const selectivity = kSumRaw > 0 ? params.k3 / kSum : 0;
+        const totalDays = Math.max(1, Math.round(params.months * 30));
+        const totalPeople = params.Nso + 2 * params.Npo;
+        return { V, Cso, kSum, kSumRaw, Kprime, tauMonths, selectivity, totalDays, totalPeople };
+      }
+
+      // Motor 1 (AEPE Analítico) + Motor 2 (EDOs Exactas por RK4, 10 sub-pasos/día)
+      function computeDeterministicModels() {
+        const d = getDerived();
+        state.totalDays = d.totalDays;
+
+        const daysArr = [];
+        const aepeNs = [], aepeNlRef = [], aepeNp = [], aepeX = [];
+        const rk4Ns = [], rk4Nl = [], rk4Np = [], rk4X = [];
+
+        let ns = params.Nso;
+        let nl = 0;
+        let np = params.Npo;
+
+        const subSteps = 10;
+        const dt = 1 / 300; // (1/30 mes) / 10
+
+        const derivs = (s, l) => {
+          const r1 = (params.k1 / d.V) * s * s;
+          const dNs = -r1 + 2 * params.k2 * l;
+          const dNl = 0.5 * r1 - (params.k2 + params.k3) * l;
+          const dNp = params.k3 * l;
+          return [dNs, dNl, dNp];
+        };
+
+        for (let day = 0; day <= d.totalDays; day++) {
+          daysArr.push(day);
+          const tm = day / 30;
+
+          // 1) Analítico AEPE
+          const term = d.Kprime * d.Cso * tm;
+          const xA = params.Nso > 0 ? term / (1 + term) : 0;
+          const nsA = params.Nso * (1 - xA);
+          const npA = params.Npo + 0.5 * params.Nso * xA;
+          const nlRef = d.kSumRaw > 0 ? (params.k1 / (2 * d.kSum)) * ((nsA * nsA) / d.V) : 0;
+
+          aepeNs.push(nsA);
+          aepeNlRef.push(nlRef);
+          aepeNp.push(npA);
+          aepeX.push(xA * 100);
+
+          // 2) EDOs exactas RK4
+          const nsClamped = Math.max(0, ns);
+          const nlClamped = Math.max(0, nl);
+          const npClamped = Math.max(0, np);
+          const xR = params.Nso > 0 ? ((params.Nso - nsClamped) / params.Nso) * 100 : 0;
+
+          rk4Ns.push(nsClamped);
+          rk4Nl.push(nlClamped);
+          rk4Np.push(npClamped);
+          rk4X.push(xR);
+
+          if (day < d.totalDays) {
+            for (let step = 0; step < subSteps; step++) {
+              const [k1s, k1l, k1p] = derivs(ns, nl);
+              const [k2s, k2l, k2p] = derivs(ns + 0.5 * dt * k1s, nl + 0.5 * dt * k1l);
+              const [k3s, k3l, k3p] = derivs(ns + 0.5 * dt * k2s, nl + 0.5 * dt * k2l);
+              const [k4s, k4l, k4p] = derivs(ns + dt * k3s, nl + dt * k3l);
+
+              ns = Math.max(0, ns + (dt / 6) * (k1s + 2 * k2s + 2 * k3s + k4s));
+              nl = Math.max(0, nl + (dt / 6) * (k1l + 2 * k2l + 2 * k3l + k4l));
+              np = Math.max(0, np + (dt / 6) * (k1p + 2 * k2p + 2 * k3p + k4p));
+            }
+          }
+        }
+
+        state.daysArr = daysArr;
+        state.aepe = { Ns: aepeNs, NlRef: aepeNlRef, Np: aepeNp, X: aepeX };
+        state.rk4  = { Ns: rk4Ns,  Nl: rk4Nl,       Np: rk4Np,  X: rk4X  };
+      }
+
+      // Motor 3: Algoritmo exacto de Gillespie SSA agrupado por día (dt = 1/30 mes)
+      function advanceGillespieDay(nsStart, nlStart, npStart, V) {
+        let ns = nsStart;
+        let nl = nlStart;
+        let np = npStart;
+        let tLocal = 0;
+        const dtDay = 1 / 30;
+        const events = [];
+        let guard = 0;
+
+        while (tLocal < dtDay && guard < 1500) {
+          guard++;
+          const a1 = ns >= 2 ? (params.k1 / (2 * V)) * ns * (ns - 1) : 0;
+          const a2 = params.k2 * nl;
+          const a3 = params.k3 * nl;
+          const a0 = a1 + a2 + a3;
+
+          if (a0 <= 1e-12) break;
+
+          const u1 = Math.max(1e-12, Math.random());
+          const tau = -Math.log(u1) / a0;
+          if (tLocal + tau > dtDay) break;
+
+          tLocal += tau;
+          const r = Math.random() * a0;
+
+          if (r < a1) {
+            ns -= 2;
+            nl += 1;
+            events.push('ligue');
+          } else if (r < a1 + a2) {
+            nl -= 1;
+            ns += 2;
+            events.push('breakup');
+          } else {
+            nl -= 1;
+            np += 1;
+            events.push('formalize');
+          }
+        }
+
+        return { ns, nl, np, events };
+      }
+
+      // Monte Carlo: 50 corridas exactas de Gillespie SSA
+      function computeMonteCarlo(numRuns = 50) {
+        const d = getDerived();
+        const T = d.totalDays;
+
+        const sumNs  = new Float64Array(T + 1);
+        const sumNl  = new Float64Array(T + 1);
+        const sumNp  = new Float64Array(T + 1);
+        const sumNp2 = new Float64Array(T + 1);
+        const sumX   = new Float64Array(T + 1);
+
+        for (let r = 0; r < numRuns; r++) {
+          let ns = params.Nso;
+          let nl = 0;
+          let np = params.Npo;
+
+          sumNs[0]  += ns;
+          sumNl[0]  += nl;
+          sumNp[0]  += np;
+          sumNp2[0] += np * np;
+          sumX[0]   += 0;
+
+          for (let day = 1; day <= T; day++) {
+            const res = advanceGillespieDay(ns, nl, np, d.V);
+            ns = res.ns;
+            nl = res.nl;
+            np = res.np;
+
+            sumNs[day]  += ns;
+            sumNl[day]  += nl;
+            sumNp[day]  += np;
+            sumNp2[day] += np * np;
+            sumX[day]   += params.Nso > 0 ? ((params.Nso - ns) / params.Nso) * 100 : 0;
+          }
+        }
+
+        const meanNs = [], meanNl = [], meanNp = [], stdNp = [], meanX = [];
+        for (let day = 0; day <= T; day++) {
+          const mNp = sumNp[day] / numRuns;
+          const variance = Math.max(0, (sumNp2[day] / numRuns) - mNp * mNp);
+          meanNs.push(sumNs[day] / numRuns);
+          meanNl.push(sumNl[day] / numRuns);
+          meanNp.push(mNp);
+          stdNp.push(Math.sqrt(variance));
+          meanX.push(sumX[day] / numRuns);
+        }
+
+        state.mc = { runs: numRuns, Ns: meanNs, Nl: meanNl, Np: meanNp, stdNp, X: meanX };
+      }
+
+      // =========================================================================
+      // 3. PALETAS GBA MINISH CAP (HUE-SHIFTED, CERO NEGRO PURO) Y SPRITE CACHE
+      // =========================================================================
+      const PAL = {
+        voidBg:      '#231a29',
+        outlineWarm: '#382018',
+        outlinePlum: '#2e1d30',
+        outlineNavy: '#1d263b',
+        outlineLeaf: '#1a3826',
+        creamHi:     '#fff3c4',
+        goldHi:      '#f7d88b',
+        goldMid:     '#e6b34c',
+        goldShd:     '#a87024',
+        woodHi:      '#e6ba73',
+        woodLight:   '#d49b54',
+        woodMid:     '#b5773a',
+        woodDark:    '#7d4a26',
+        woodDeep:    '#59321b',
+        leafHi:      '#b8eb7c',
+        leafLight:   '#85d468',
+        leafMid:     '#4ca64c',
+        leafDark:    '#2f7a3e',
+        crimsonHi:   '#f26679',
+        crimsonMid:  '#c9324b',
+        crimsonDark: '#8a2038',
+        blush:       '#f5879a'
+      };
+
+      const SKIN_PALETTES = [
+        { hi: '#ffe7cc', mid: '#f5cba3', shd: '#cf956b' },
+        { hi: '#fae0be', mid: '#e8b687', shd: '#bd8355' },
+        { hi: '#edd0ad', mid: '#d69c6d', shd: '#a66d46' },
+        { hi: '#d6a47a', mid: '#b87d52', shd: '#875436' },
+        { hi: '#fff0db', mid: '#f2c7a5', shd: '#c99373' }
+      ];
+
+      const HAIR_PALETTES = [
+        { hi: '#785a46', mid: '#4f3528', shd: '#36201a' }, // castaño oscuro
+        { hi: '#b57b42', mid: '#875029', shd: '#59321b' }, // castaño miel
+        { hi: '#f7d87c', mid: '#d9a443', shd: '#9e6b24' }, // rubio dorado Link
+        { hi: '#d96b43', mid: '#a8442a', shd: '#6e2820' }, // pelirrojo cálido
+        { hi: '#68799e', mid: '#414f70', shd: '#28304a' }, // azul pizarra oscuro
+        { hi: '#8c5a73', mid: '#5e364f', shd: '#3b2036' }  // ciruela suave
+      ];
+
+      // Túnicas para solteros (tonos fríos/variados estilo Hyrule)
+      const SINGLE_TUNICS = [
+        { hi: '#63a8e6', mid: '#3675b8', shd: '#244e85', out: '#1d263b' }, // azul cobalto
+        { hi: '#73c96e', mid: '#3d9448', shd: '#276638', out: '#1a3826' }, // verde bosque
+        { hi: '#5ec9bf', mid: '#2d9491', shd: '#1e666b', out: '#1b3440' }, // turquesa
+        { hi: '#e8b85a', mid: '#c48933', shd: '#8c5a20', out: '#382018' }, // ocre dorado
+        { hi: '#a98ce0', mid: '#785db3', shd: '#503b82', out: '#2e1d30' }, // lavanda
+        { hi: '#6e8ec4', mid: '#486599', shd: '#2f446e', out: '#1d263b' }  // índigo suave
+      ];
+
+      // Túnicas con acentos cálidos para Parejas (carmesí / dorado)
+      const COUPLE_TUNIC = { hi: '#f26679', mid: '#d1344e', shd: '#941f3a', out: '#2e1d30' };
+
+      // Caché de sprites pre-renderizados (16x22 virtual px cada frame)
+      const spriteCache = new Map();
+
+      function getTunicForAgent(ag, role) {
+        if (role === 'P') return COUPLE_TUNIC;
+        return SINGLE_TUNICS[ag.tunicIdx];
+      }
+
+      // Dibuja un rectángulo de píxeles exactos en un contexto virtual
+      function px(c, x, y, w, h, color) {
+        c.fillStyle = color;
+        c.fillRect(x, y, w, h);
+      }
+
+      // Genera y cachea un sprite Chibi GBA 16x22 (ancla en x=8, y=20)
+      function getChibiSprite(ag, role, dir, phase) {
+        const key = `${ag.skinIdx}_${ag.hairIdx}_${ag.hairStyle}_${ag.tunicIdx}_${role}_${dir}_${phase}`;
+        const cached = spriteCache.get(key);
+        if (cached) return cached;
+
+        const sc = document.createElement('canvas');
+        sc.width = 16;
+        sc.height = 22;
+        const c = sc.getContext('2d');
+        c.imageSmoothingEnabled = false;
+
+        const skin  = SKIN_PALETTES[ag.skinIdx];
+        const hair  = HAIR_PALETTES[ag.hairIdx];
+        const tunic = getTunicForAgent(ag, role);
+        const out   = PAL.outlinePlum;
+        const outW  = PAL.outlineWarm;
+
+        // Rebote vertical de 1px en fases de paso (1 y 3)
+        const bob = (phase === 1 || phase === 3) ? -1 : 0;
+        const y0 = 1 + bob; // desplazamiento vertical base
+
+        // 1. Sombra elíptica suave bajo los pies (fija al suelo, sin rebote)
+        c.fillStyle = 'rgba(46, 29, 48, 0.30)';
+        c.fillRect(4, 19, 8, 2);
+        c.fillRect(5, 18, 6, 1);
+        c.fillRect(5, 21, 6, 1);
+
+        // 2. Pies / botas con alternancia en 4 fases
+        const leftStep  = phase === 1 ? -1 : (phase === 3 ? 1 : 0);
+        const rightStep = phase === 3 ? -1 : (phase === 1 ? 1 : 0);
+
+        if (dir === 'down' || dir === 'up') {
+          const ly = 18 + (phase === 1 ? -1 : 0);
+          const ry = 18 + (phase === 3 ? -1 : 0);
+          // Bota izquierda
+          px(c, 4, ly, 3, 2, outW);
+          px(c, 5, ly, 2, 1, '#7d4a26');
+          // Bota derecha
+          px(c, 9, ry, 3, 2, outW);
+          px(c, 9, ry, 2, 1, '#7d4a26');
+        } else {
+          // Perfil izquierda / derecha: pies se cruzan al caminar
+          const f1x = 6 + leftStep * 2;
+          const f2x = 7 + rightStep * 2;
+          px(c, f1x, 18, 3, 2, outW);
+          px(c, f1x + 1, 18, 1, 1, '#7d4a26');
+          px(c, f2x, 18, 3, 2, outW);
+          px(c, f2x + 1, 18, 1, 1, '#a36832');
+        }
+
+        // 3. Túnica / cuerpo chibi con contorno coloreado, cuello, cinturón y mangas
+        if (dir === 'down' || dir === 'up') {
+          // Contorno cuerpo
+          px(c, 4, y0 + 11, 8, 7, tunic.out);
+          px(c, 3, y0 + 12, 10, 5, tunic.out);
+          // Relleno túnica con sombreado lateral
+          px(c, 5, y0 + 12, 6, 5, tunic.mid);
+          px(c, 5, y0 + 12, 2, 4, tunic.hi);
+          px(c, 9, y0 + 12, 2, 5, tunic.shd);
+
+          // Mangas + manitas (se balancean al caminar)
+          const lArmY = y0 + 12 + (phase === 3 ? 1 : 0);
+          const rArmY = y0 + 12 + (phase === 1 ? 1 : 0);
+          px(c, 4, lArmY, 1, 3, tunic.hi);
+          px(c, 4, lArmY + 2, 1, 1, skin.mid);
+          px(c, 11, rArmY, 1, 3, tunic.shd);
+          px(c, 11, rArmY + 2, 1, 1, skin.shd);
+
+          // Cuello crema y cinturón de cuero con hebilla dorada
+          px(c, 6, y0 + 11, 4, 1, role === 'P' ? PAL.goldHi : PAL.creamHi);
+          px(c, 5, y0 + 15, 6, 1, '#6e3d20');
+          if (dir === 'down') {
+            px(c, 7, y0 + 15, 2, 1, PAL.goldHi);
+            if (role === 'P') {
+              // Ribete dorado vertical estilo gala para parejas
+              px(c, 7, y0 + 12, 2, 3, PAL.goldMid);
+              px(c, 7, y0 + 12, 1, 2, PAL.goldHi);
+            }
+          }
+        } else {
+          // Perfil (left / right)
+          const flip = dir === 'left';
+          const sx = (x, w = 1) => flip ? (16 - x - w) : x;
+
+          px(c, sx(5, 6), y0 + 11, 6, 7, tunic.out);
+          px(c, sx(4, 8), y0 + 12, 8, 5, tunic.out);
+          px(c, sx(5, 6), y0 + 12, 6, 5, tunic.mid);
+          px(c, sx(8, 3), y0 + 12, 3, 4, tunic.hi);
+          px(c, sx(5, 2), y0 + 12, 2, 5, tunic.shd);
+          // Cuello & cinturón
+          px(c, sx(7, 3), y0 + 11, 3, 1, role === 'P' ? PAL.goldHi : PAL.creamHi);
+          px(c, sx(5, 6), y0 + 15, 6, 1, '#6e3d20');
+          px(c, sx(9, 2), y0 + 15, 2, 1, PAL.goldHi);
+          // Brazo visible oscilando
+          const armDx = phase === 1 ? 1 : (phase === 3 ? -1 : 0);
+          px(c, sx(7 + armDx, 2), y0 + 12, 2, 3, tunic.hi);
+          px(c, sx(7 + armDx, 2), y0 + 14, 2, 1, skin.mid);
+        }
+
+        // 4. Cabeza Chibi expresiva (~10x9 px)
+        if (dir === 'down') {
+          // Contorno redondeado cabeza
+          px(c, 4, y0 + 2, 8, 9, out);
+          px(c, 3, y0 + 3, 10, 7, out);
+          // Cara
+          px(c, 4, y0 + 4, 8, 6, skin.mid);
+          px(c, 5, y0 + 4, 6, 2, skin.hi);
+          px(c, 4, y0 + 9, 8, 1, skin.shd);
+          // Orejitas
+          px(c, 3, y0 + 6, 1, 2, skin.shd);
+          px(c, 12, y0 + 6, 1, 2, skin.shd);
+
+          // Ojos grandes de 2px con brillo specular
+          px(c, 5, y0 + 7, 1, 2, PAL.outlineNavy);
+          px(c, 10, y0 + 7, 1, 2, PAL.outlineNavy);
+          px(c, 5, y0 + 7, 1, 1, '#ffffff');
+          px(c, 10, y0 + 7, 1, 1, '#ffffff');
+
+          // Rubor rosado en mejillas para Ligues (L*) y sutil en Parejas (P)
+          if (role === 'L' || role === 'P') {
+            px(c, 4, y0 + 8, 1, 1, PAL.blush);
+            px(c, 11, y0 + 8, 1, 1, PAL.blush);
+          }
+
+          // Cabello por estilo (5 variantes con banda de brillo superior)
+          drawHairFront(c, y0, hair, ag.hairStyle, out);
+        } else if (dir === 'up') {
+          // Espalda de la cabeza cubierta de cabello detallado
+          px(c, 4, y0 + 2, 8, 9, out);
+          px(c, 3, y0 + 3, 10, 7, out);
+          px(c, 4, y0 + 3, 8, 7, hair.mid);
+          px(c, 5, y0 + 3, 6, 2, hair.hi);
+          px(c, 4, y0 + 8, 8, 2, hair.shd);
+          // Nuca
+          px(c, 6, y0 + 10, 4, 1, skin.shd);
+          if (ag.hairStyle === 3) {
+            // Coleta trasera
+            px(c, 6, y0 + 9, 4, 4, out);
+            px(c, 7, y0 + 9, 2, 3, hair.mid);
+            px(c, 7, y0 + 9, 2, 1, PAL.crimsonHi);
+          } else if (ag.hairStyle === 2) {
+            // Melena bob
+            px(c, 4, y0 + 10, 8, 2, hair.shd);
+          }
+        } else {
+          // Perfil derecha / izquierda
+          const flip = dir === 'left';
+          const sx = (x, w = 1) => flip ? (16 - x - w) : x;
+
+          px(c, sx(4, 8), y0 + 2, 8, 9, out);
+          px(c, sx(3, 10), y0 + 3, 10, 7, out);
+          // Piel de perfil
+          px(c, sx(5, 7), y0 + 4, 7, 6, skin.mid);
+          px(c, sx(8, 4), y0 + 4, 4, 2, skin.hi);
+          px(c, sx(5, 6), y0 + 9, 6, 1, skin.shd);
+
+          // Ojo de perfil de 2px con brillo
+          px(c, sx(10, 1), y0 + 7, 1, 2, PAL.outlineNavy);
+          px(c, sx(10, 1), y0 + 7, 1, 1, '#ffffff');
+
+          // Rubor en mejilla (súper visible en ligues mirándose frente a frente)
+          if (role === 'L' || role === 'P') {
+            px(c, sx(9, 1), y0 + 8, 1, 1, PAL.blush);
+            if (role === 'L') px(c, sx(11, 1), y0 + 8, 1, 1, PAL.blush);
+          }
+
+          // Cabello de perfil
+          px(c, sx(4, 8), y0 + 3, 8, 3, hair.mid);
+          px(c, sx(5, 6), y0 + 3, 6, 1, hair.hi);
+          px(c, sx(4, 4), y0 + 5, 4, 5, hair.mid);
+          px(c, sx(4, 2), y0 + 6, 2, 4, hair.shd);
+          if (ag.hairStyle === 1) {
+            // Mechón despeinado
+            px(c, sx(11, 2), y0 + 4, 2, 2, hair.hi);
+            px(c, sx(3, 2), y0 + 4, 2, 2, hair.shd);
+          } else if (ag.hairStyle === 2) {
+            // Bob
+            px(c, sx(4, 4), y0 + 8, 4, 3, hair.shd);
+          } else if (ag.hairStyle === 3) {
+            // Coleta trasera
+            px(c, sx(2, 2), y0 + 6, 2, 4, out);
+            px(c, sx(2, 2), y0 + 7, 2, 2, hair.mid);
+            px(c, sx(3, 1), y0 + 6, 1, 1, PAL.goldHi);
+          } else if (ag.hairStyle === 4) {
+            // Flequillo
+            px(c, sx(9, 3), y0 + 5, 3, 2, hair.mid);
+          }
+        }
+
+        spriteCache.set(key, sc);
+        return sc;
+      }
+
+      function drawHairFront(c, y0, hair, style, out) {
+        // Corona principal
+        px(c, 4, y0 + 3, 8, 2, hair.mid);
+        px(c, 5, y0 + 3, 6, 1, hair.hi); // banda de brillo GBA
+        px(c, 4, y0 + 5, 2, 2, hair.shd);
+        px(c, 10, y0 + 5, 2, 2, hair.shd);
+
+        if (style === 0) {
+          // Corto clásico con partido lateral
+          px(c, 6, y0 + 5, 3, 1, hair.mid);
+        } else if (style === 1) {
+          // Despeinado estilo héroe RPG
+          px(c, 3, y0 + 2, 2, 2, hair.mid);
+          px(c, 11, y0 + 2, 2, 2, hair.shd);
+          px(c, 5, y0 + 5, 2, 2, hair.mid);
+          px(c, 8, y0 + 5, 2, 1, hair.hi);
+        } else if (style === 2) {
+          // Bob enmarcando la cara
+          px(c, 3, y0 + 4, 1, 6, out);
+          px(c, 12, y0 + 4, 1, 6, out);
+          px(c, 4, y0 + 5, 1, 5, hair.mid);
+          px(c, 11, y0 + 5, 1, 5, hair.shd);
+          px(c, 5, y0 + 5, 6, 1, hair.mid);
+        } else if (style === 3) {
+          // Coleta con moño/listón
+          px(c, 5, y0 + 1, 6, 2, out);
+          px(c, 6, y0 + 2, 4, 1, hair.hi);
+          px(c, 11, y0 + 3, 2, 3, hair.shd);
+          px(c, 11, y0 + 3, 1, 1, PAL.goldHi);
+        } else {
+          // Flequillo parejo
+          px(c, 4, y0 + 5, 8, 2, hair.mid);
+          px(c, 5, y0 + 5, 6, 1, hair.hi);
+        }
+      }
+
+      // Fuente bitmap 3x5 / 4x5 ultra nítida para pizarrón y placa de puerta
+      const BITMAP_FONT = {
+        'A': ['010', '101', '111', '101', '101'],
+        'B': ['110', '101', '110', '101', '110'],
+        'C': ['011', '100', '100', '100', '011'],
+        'D': ['110', '101', '101', '101', '110'],
+        'E': ['111', '100', '110', '100', '111'],
+        'H': ['101', '101', '111', '101', '101'],
+        'L': ['100', '100', '100', '100', '111'],
+        'O': ['010', '101', '101', '101', '010'],
+        'P': ['110', '101', '110', '100', '100'],
+        'R': ['110', '101', '110', '101', '101'],
+        'S': ['011', '100', '010', '001', '110'],
+        'T': ['111', '010', '010', '010', '010'],
+        '2': ['110', '001', '010', '100', '111'],
+        '*': ['010', '111', '010', '000', '000'],
+        ' ': ['00', '00', '00', '00', '00'],
+        '⇌': ['0010', '1111', '0000', '1111', '0100'],
+        '→': ['0010', '0001', '1111', '0001', '0010']
+      };
+
+      function measurePixelText(str) {
+        let w = 0;
+        for (let i = 0; i < str.length; i++) {
+          const g = BITMAP_FONT[str[i]] || BITMAP_FONT[' '];
+          w += g[0].length + (i < str.length - 1 ? 1 : 0);
+        }
+        return w;
+      }
+
+      function drawPixelText(c, str, cx, cy, color, centered = true) {
+        const totalW = measurePixelText(str);
+        let x = centered ? Math.round(cx - totalW / 2) : Math.round(cx);
+        const y = Math.round(cy - 2);
+        c.fillStyle = color;
+        for (let i = 0; i < str.length; i++) {
+          const g = BITMAP_FONT[str[i]] || BITMAP_FONT[' '];
+          for (let r = 0; r < g.length; r++) {
+            for (let col = 0; col < g[r].length; col++) {
+              if (g[r][col] === '1') {
+                c.fillRect(x + col, y + r, 1, 1);
+              }
+            }
+          }
+          x += g[0].length + 1;
+        }
+      }
+
+      // =========================================================================
+      // 4. GENERACIÓN DEL SALÓN, PUPITRES Y ENTIDADES DEL AULA
+      // =========================================================================
+      function pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function randomFloorPos(marginX = 0.50, marginTop = 0.72, marginBot = 0.42) {
+        const mx = Math.min(marginX, params.L * 0.22);
+        const mt = Math.min(marginTop, params.W * 0.24);
+        const mb = Math.min(marginBot, params.W * 0.20);
+        const x = mx + Math.random() * Math.max(0.35, params.L - 2 * mx);
+        const y = mt + Math.random() * Math.max(0.35, params.W - mt - mb);
+        return { x, y };
+      }
+
+      function createPerson(id, x, y, role) {
+        return {
+          id,
+          state: role, // 'S', 'L', 'P'
+          x,
+          y,
+          tx: x,
+          ty: y,
+          speed: 0.90 + Math.random() * 0.50,
+          pauseTimer: Math.random() * 1.8,
+          dir: pick(['down', 'left', 'right']),
+          walkPhase: Math.random() * 4,
+          skinIdx: Math.floor(Math.random() * SKIN_PALETTES.length),
+          hairIdx: Math.floor(Math.random() * HAIR_PALETTES.length),
+          hairStyle: Math.floor(Math.random() * 5),
+          tunicIdx: Math.floor(Math.random() * SINGLE_TUNICS.length),
+          pairId: null
+        };
+      }
+
+      function generateDesks() {
+        const desks = [];
+        const padX = 0.95;
+        const padTop = 1.15;
+        const padBot = 0.75;
+        const usableW = Math.max(0, params.L - 2 * padX);
+        const usableD = Math.max(0, params.W - padTop - padBot);
+
+        const cols = Math.max(1, Math.min(5, Math.floor(usableW / 1.75)));
+        const rows = Math.max(1, Math.min(4, Math.floor(usableD / 1.65)));
+        const stepX = cols > 0 ? usableW / cols : 0;
+        const stepY = rows > 0 ? usableD / rows : 0;
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const dx = padX + (c + 0.5) * stepX;
+            const dy = padTop + (r + 0.5) * stepY;
+            if (dx > 0.70 && dx < params.L - 0.70 && dy > 0.85 && dy < params.W - 0.55) {
+              desks.push({
+                x: dx,
+                y: dy,
+                w: 0.82,
+                h: 0.44,
+                prop: (r * 3 + c) % 3 // 0: libro abierto, 1: pergamino+tintero, 2: cuaderno azul
+              });
+            }
+          }
+        }
+        state.desks = desks;
+      }
+
+      function spawnParticle(type, x, y) {
+        state.particles.push({
+          type, // 'sparkle', 'broken_heart', 'heart_burst'
+          x,
+          y,
+          age: 0,
+          maxAge: type === 'broken_heart' ? 1.6 : 1.45
+        });
+      }
+
+      function applyVisualEvent(evType, dayNum) {
+        if (evType === 'ligue') {
+          const singles = state.agents.filter(a => a.state === 'S');
+          if (singles.length < 2) return;
+
+          // Emparejar los 2 solteros más cercanos para movimiento natural
+          let bestI = 0, bestJ = 1, bestDist = Infinity;
+          for (let i = 0; i < singles.length; i++) {
+            for (let j = i + 1; j < singles.length; j++) {
+              const dist2 = (singles[i].x - singles[j].x) ** 2 + (singles[i].y - singles[j].y) ** 2;
+              if (dist2 < bestDist) {
+                bestDist = dist2;
+                bestI = i;
+                bestJ = j;
+              }
+            }
+          }
+
+          const a = singles[bestI];
+          const b = singles[bestJ];
+          const pairId = state.nextPairId++;
+          a.state = 'L';
+          b.state = 'L';
+          a.pairId = pairId;
+          b.pairId = pairId;
+
+          const mx = Math.min(params.L - 0.65, Math.max(0.65, 0.5 * (a.x + b.x)));
+          const my = Math.min(params.W - 0.50, Math.max(0.80, 0.5 * (a.y + b.y)));
+
+          state.ligues.push({ id: pairId, a, b, x: mx, y: my, phase: Math.random() * Math.PI * 2 });
+          spawnParticle('sparkle', mx, my);
+          state.counts.ligues++;
+          state.lastEventText = `Día ${dayNum}: ¡Nuevo ligue formado! (2S → L*)`;
+        } else if (evType === 'breakup') {
+          if (state.ligues.length === 0) return;
+          const idx = Math.floor(Math.random() * state.ligues.length);
+          const lig = state.ligues.splice(idx, 1)[0];
+          lig.a.state = 'S';
+          lig.b.state = 'S';
+          lig.a.pairId = null;
+          lig.b.pairId = null;
+
+          const pA = randomFloorPos();
+          const pB = randomFloorPos();
+          lig.a.tx = pA.x; lig.a.ty = pA.y; lig.a.pauseTimer = 0.25;
+          lig.b.tx = pB.x; lig.b.ty = pB.y; lig.b.pauseTimer = 0.25;
+
+          spawnParticle('broken_heart', lig.x, lig.y);
+          state.counts.breaks++;
+          state.lastEventText = `Día ${dayNum}: Ligue disuelto, regresan a solteros (L* → 2S)`;
+        } else if (evType === 'formalize') {
+          if (state.ligues.length === 0) return;
+          const idx = Math.floor(Math.random() * state.ligues.length);
+          const lig = state.ligues.splice(idx, 1)[0];
+          lig.a.state = 'P';
+          lig.b.state = 'P';
+
+          const target = randomFloorPos(0.80, 0.85, 0.50);
+          state.couples.push({
+            id: lig.id,
+            a: lig.a,
+            b: lig.b,
+            x: lig.x,
+            y: lig.y,
+            tx: target.x,
+            ty: target.y,
+            speed: 0.62 + Math.random() * 0.25,
+            pauseTimer: 0.65
+          });
+
+          spawnParticle('heart_burst', lig.x, lig.y);
+          state.counts.couples++;
+          state.lastEventText = `Día ${dayNum}: ¡Ligue formalizado a pareja! (L* → P)`;
+        }
+      }
+
+      function stepSimulationOneDay(dayNum) {
+        const d = getDerived();
+        const nsStart = state.agents.filter(a => a.state === 'S').length;
+        const nlStart = state.ligues.length;
+        const npStart = state.couples.length;
+
+        const res = advanceGillespieDay(nsStart, nlStart, npStart, d.V);
+        for (const ev of res.events) {
+          applyVisualEvent(ev, dayNum);
+        }
+
+        const nsNow = state.agents.filter(a => a.state === 'S').length;
+        const nlNow = state.ligues.length;
+        const npNow = state.couples.length;
+        const xNow = params.Nso > 0 ? ((params.Nso - nsNow) / params.Nso) * 100 : 0;
+
+        state.stoch.days.push(dayNum);
+        state.stoch.Ns.push(nsNow);
+        state.stoch.Nl.push(nlNow);
+        state.stoch.Np.push(npNow);
+        state.stoch.X.push(xNow);
+      }
+
+      function resetSimulation(recalcAllModels = false) {
+        state.running = false;
+        updatePlayButtonUI();
+
+        if (recalcAllModels || state.daysArr.length === 0) {
+          computeDeterministicModels();
+          if (state.advancedMode) {
+            computeMonteCarlo(50);
+          } else {
+            state.mc = null;
+          }
+        }
+
+        state.simTime = 0;
+        state.currentDay = 0;
+        state.counts = { ligues: 0, breaks: 0, couples: 0 };
+        state.agents = [];
+        state.ligues = [];
+        state.couples = [];
+        state.particles = [];
+        state.nextPairId = 1;
+
+        generateDesks();
+
+        let pid = 1;
+        for (let i = 0; i < params.Nso; i++) {
+          const p = randomFloorPos();
+          state.agents.push(createPerson(pid++, p.x, p.y, 'S'));
+        }
+
+        for (let i = 0; i < params.Npo; i++) {
+          const p = randomFloorPos(0.80, 0.85, 0.50);
+          const a = createPerson(pid++, p.x - 0.20, p.y, 'P');
+          const b = createPerson(pid++, p.x + 0.20, p.y, 'P');
+          const pairId = state.nextPairId++;
+          a.pairId = pairId;
+          b.pairId = pairId;
+          a.dir = 'down';
+          b.dir = 'down';
+          state.agents.push(a, b);
+          const dest = randomFloorPos(0.80, 0.85, 0.50);
+          state.couples.push({
+            id: pairId,
+            a,
+            b,
+            x: p.x,
+            y: p.y,
+            tx: dest.x,
+            ty: dest.y,
+            speed: 0.62 + Math.random() * 0.25,
+            pauseTimer: Math.random() * 1.8
+          });
+        }
+
+        state.stoch = {
+          days: [0],
+          Ns: [params.Nso],
+          Nl: [0],
+          Np: [params.Npo],
+          X: [0]
+        };
+
+        state.lastEventText = `Día 0: Reactor batch cerrado e inicializado (${params.Nso} solteros, ${params.Npo} pareja${params.Npo === 1 ? '' : 's'}).`;
+        updateUI(true);
+      }
+
+      // =========================================================================
+      // 5. FÍSICA DE MOVIMIENTO SUAVE (4 DIRECCIONES Y CICLO DE 4 FASES)
+      // =========================================================================
+      function dirFromDelta(dx, dy, fallback) {
+        if (Math.abs(dx) < 0.005 && Math.abs(dy) < 0.005) return fallback;
+        if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'right' : 'left';
+        return dy >= 0 ? 'down' : 'up';
+      }
+
+      function updatePhysics(dtSec) {
+        const dt = Math.min(0.05, dtSec);
+        const speedMult = state.running ? Math.min(2.6, 0.85 + Math.sqrt(state.speed) * 0.35) : 0.60;
+
+        // Nubes pixeladas suaves
+        for (const cl of state.clouds) {
+          cl.x += cl.speed * dt * (state.running ? 1.4 : 0.7);
+          if (cl.x > 1.25) cl.x = -0.40;
+        }
+
+        // Solteros: pasean y hacen pausas naturales cerca de pupitres
+        for (const ag of state.agents) {
+          if (ag.state !== 'S') continue;
+          if (ag.pauseTimer > 0) {
+            ag.pauseTimer -= dt;
+            ag.walkPhase = 0;
+            if (ag.pauseTimer <= 0) {
+              // 35% de probabilidad de acercarse a un pupitre libre
+              if (state.desks.length > 0 && Math.random() < 0.35) {
+                const dk = pick(state.desks);
+                ag.tx = Math.min(params.L - 0.45, Math.max(0.45, dk.x + (Math.random() - 0.5) * 0.5));
+                ag.ty = Math.min(params.W - 0.40, Math.max(0.70, dk.y + 0.38));
+              } else {
+                const dest = randomFloorPos();
+                ag.tx = dest.x;
+                ag.ty = dest.y;
+              }
+            }
+          } else {
+            const dx = ag.tx - ag.x;
+            const dy = ag.ty - ag.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 0.07) {
+              ag.pauseTimer = 0.7 + Math.random() * 2.2;
+              ag.walkPhase = 0;
+              if (Math.random() < 0.45) ag.dir = 'down';
+            } else {
+              const step = Math.min(dist, ag.speed * speedMult * dt);
+              ag.x += (dx / dist) * step;
+              ag.y += (dy / dist) * step;
+              ag.dir = dirFromDelta(dx, dy, ag.dir);
+              ag.walkPhase = (ag.walkPhase + step * 6.8) % 4;
+            }
+          }
+        }
+
+        // Ligues: 2 sprites mirándose frente a frente a corta distancia
+        for (const lig of state.ligues) {
+          lig.phase += dt * 4.0;
+          const moveMember = (p, tx, ty, restDir) => {
+            const dx = tx - p.x;
+            const dy = ty - p.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 0.03) {
+              const step = Math.min(dist, 2.5 * speedMult * dt);
+              p.x += (dx / dist) * step;
+              p.y += (dy / dist) * step;
+              p.dir = dirFromDelta(dx, dy, restDir);
+              p.walkPhase = (p.walkPhase + step * 7.2) % 4;
+            } else {
+              p.x = tx;
+              p.y = ty;
+              p.dir = restDir;
+              p.walkPhase = 0;
+            }
+          };
+          moveMember(lig.a, lig.x - 0.27, lig.y, 'right');
+          moveMember(lig.b, lig.x + 0.27, lig.y, 'left');
+        }
+
+        // Parejas: caminan juntas hombro con hombro sincronizadas
+        for (const cp of state.couples) {
+          if (cp.pauseTimer > 0) {
+            cp.pauseTimer -= dt;
+            cp.a.walkPhase = 0;
+            cp.b.walkPhase = 0;
+            if (cp.pauseTimer <= 0) {
+              const dest = randomFloorPos(0.80, 0.85, 0.50);
+              cp.tx = dest.x;
+              cp.ty = dest.y;
+            }
+          } else {
+            const dx = cp.tx - cp.x;
+            const dy = cp.ty - cp.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 0.07) {
+              cp.pauseTimer = 1.0 + Math.random() * 2.4;
+              cp.a.walkPhase = 0;
+              cp.b.walkPhase = 0;
+              cp.a.dir = 'down';
+              cp.b.dir = 'down';
+            } else {
+              const step = Math.min(dist, cp.speed * speedMult * dt);
+              cp.x += (dx / dist) * step;
+              cp.y += (dy / dist) * step;
+              const d = dirFromDelta(dx, dy, cp.a.dir);
+              cp.a.dir = d;
+              cp.b.dir = d;
+              cp.a.walkPhase = (cp.a.walkPhase + step * 6.2) % 4;
+              cp.b.walkPhase = cp.a.walkPhase;
+            }
+          }
+          cp.a.x = cp.x - 0.20;
+          cp.a.y = cp.y;
+          cp.b.x = cp.x + 0.20;
+          cp.b.y = cp.y;
+        }
+
+        // Partículas
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+          state.particles[i].age += dt;
+          if (state.particles[i].age >= state.particles[i].maxAge) {
+            state.particles.splice(i, 1);
+          }
+        }
+      }
+
+      // =========================================================================
+      // 6. MOTOR PIXEL ART GBA "THE LEGEND OF ZELDA: THE MINISH CAP"
+      //    Renderizado en buffer lógico de baja resolución -> escalado nítido
+      // =========================================================================
+      const displayCanvas = document.getElementById('classroom-canvas');
+      const displayCtx = displayCanvas.getContext('2d');
+
+      // Buffer lógico offscreen de píxeles virtuales auténticos (1px virtual = 1px GBA)
+      const vCanvas = document.createElement('canvas');
+      const vCtx = vCanvas.getContext('2d');
+
+      let cachedDispW = 0, cachedDispH = 0;
+
+      function resizeDisplayCanvas() {
+        const wrap = document.getElementById('canvas-wrapper');
+        const rect = wrap.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.max(320, Math.floor(rect.width * dpr));
+        const h = Math.max(220, Math.floor(rect.height * dpr));
+        if (w !== cachedDispW || h !== cachedDispH) {
+          displayCanvas.width = w;
+          displayCanvas.height = h;
+          cachedDispW = w;
+          cachedDispH = h;
+        }
+      }
+
+      function getHourFloat(simTimeVal) {
+        return (8 + (simTimeVal % 1) * 24) % 24;
+      }
+
+      function formatClock(simTimeVal) {
+        const hf = getHourFloat(simTimeVal);
+        const hh = Math.floor(hf);
+        const mm = Math.floor((hf - hh) * 60);
+        return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+      }
+
+      function getLighting(hourFloat) {
+        let icon = '☀';
+        let label = 'Mediodía';
+        let skyTop = '#4fa8f0', skyMid = '#85d2ff', skyBot = '#d6f4ff';
+        let tint = [255, 255, 255, 0];
+        let beamColor = 'rgba(255, 245, 200, 0.16)';
+        let lanternStrength = 0;
+        let isNight = false;
+
+        if (hourFloat >= 5.5 && hourFloat < 9.5) {
+          icon = '🌅';
+          label = 'Mañana';
+          const t = (hourFloat - 5.5) / 4.0;
+          skyTop = '#5b9be8';
+          skyMid = '#9cd1f7';
+          skyBot = '#ffe5ad';
+          tint = [255, 214, 140, 0.11 * (1 - t * 0.65)];
+          beamColor = 'rgba(255, 236, 175, 0.18)';
+          lanternStrength = Math.max(0, 0.55 - t * 0.7);
+        } else if (hourFloat >= 9.5 && hourFloat < 16.5) {
+          icon = '☀';
+          label = 'Mediodía';
+          skyTop = '#44a0eb';
+          skyMid = '#7ecbff';
+          skyBot = '#d4f2ff';
+          tint = [255, 250, 230, 0.02];
+          beamColor = 'rgba(255, 248, 212, 0.17)';
+          lanternStrength = 0;
+        } else if (hourFloat >= 16.5 && hourFloat < 19.75) {
+          icon = '🌇';
+          label = 'Atardecer';
+          const t = (hourFloat - 16.5) / 3.25;
+          skyTop = '#6c498f';
+          skyMid = '#d96c5b';
+          skyBot = '#f7be63';
+          tint = [219, 102, 52, 0.13 + 0.08 * Math.sin(t * Math.PI)];
+          beamColor = 'rgba(255, 186, 105, 0.20)';
+          lanternStrength = Math.min(1, t * 1.25);
+        } else {
+          icon = '🌙';
+          label = 'Noche';
+          skyTop = '#182247';
+          skyMid = '#24346b';
+          skyBot = '#354a8a';
+          tint = [22, 30, 74, 0.38];
+          beamColor = 'rgba(150, 198, 255, 0.15)';
+          lanternStrength = 1.0;
+          isNight = true;
+        }
+
+        // Atenuación automática a velocidades >= 15x para evitar parpadeo molesto
+        let atten = 1.0;
+        if (!state.dayNightEnabled) {
+          atten = 0;
+          icon = '☀';
+          label = 'Luz fija';
+          skyTop = '#44a0eb';
+          skyMid = '#7ecbff';
+          skyBot = '#d4f2ff';
+          beamColor = 'rgba(255, 248, 212, 0.16)';
+          lanternStrength = 0;
+          isNight = false;
+        } else if (state.running && state.speed >= 15) {
+          atten = state.speed >= 30 ? 0.14 : 0.28;
+        }
+
+        return {
+          icon,
+          label,
+          skyTop,
+          skyMid,
+          skyBot,
+          beamColor,
+          lanternStrength: state.dayNightEnabled ? lanternStrength * (atten > 0.35 ? 1 : 0.6) : 0,
+          isNight: state.dayNightEnabled && isNight,
+          atten,
+          tintRgba: `rgba(${tint[0]}, ${tint[1]}, ${tint[2]}, ${(tint[3] * atten).toFixed(3)})`
+        };
+      }
+
+      // Íconos pixel art estilo Minish Cap (Contenedor de Corazón, Medio Corazón, Corazón Roto)
+      function drawHeartContainer(c, cx, cy) {
+        const map = [
+          '0011001100',
+          '0122112210',
+          '1234423321',
+          '1243333521',
+          '1233335521',
+          '0123355210',
+          '0012352100',
+          '0001221000',
+          '0000110000'
+        ];
+        const colors = {
+          '1': PAL.outlinePlum,
+          '2': PAL.goldHi,
+          '3': '#e82e4d',
+          '4': '#ffe8ee',
+          '5': '#a61b39'
+        };
+        const ox = Math.round(cx - 5);
+        const oy = Math.round(cy - 4);
+        for (let r = 0; r < map.length; r++) {
+          for (let col = 0; col < map[r].length; col++) {
+            const ch = map[r][col];
+            if (ch !== '0') px(c, ox + col, oy + r, 1, 1, colors[ch]);
+          }
+        }
+      }
+
+      function drawHalfHeart(c, cx, cy, pulse) {
+        const map = [
+          '0110110',
+          '1231441',
+          '1322451',
+          '0122410',
+          '0012100',
+          '0001000'
+        ];
+        const colors = {
+          '1': PAL.outlinePlum,
+          '2': pulse ? '#ff6b81' : '#f2b63d',
+          '3': '#fff3c4',
+          '4': '#6e5266',
+          '5': '#473345'
+        };
+        const ox = Math.round(cx - 3);
+        const oy = Math.round(cy - 3);
+        for (let r = 0; r < map.length; r++) {
+          for (let col = 0; col < map[r].length; col++) {
+            const ch = map[r][col];
+            if (ch !== '0') px(c, ox + col, oy + r, 1, 1, colors[ch]);
+          }
+        }
+      }
+
+      function drawBrokenHeart(c, cx, cy, splitPx) {
+        const leftHalf = [
+          '0110',
+          '1221',
+          '1210',
+          '0121',
+          '0010'
+        ];
+        const rightHalf = [
+          '0110',
+          '1331',
+          '0131',
+          '1310',
+          '0100'
+        ];
+        const oy = Math.round(cy - 2);
+        const lx = Math.round(cx - 4 - splitPx);
+        const rx = Math.round(cx + splitPx);
+        for (let r = 0; r < 5; r++) {
+          for (let col = 0; col < 4; col++) {
+            if (leftHalf[r][col] === '1')  px(c, lx + col, oy + r, 1, 1, PAL.outlinePlum);
+            if (leftHalf[r][col] === '2')  px(c, lx + col, oy + r, 1, 1, '#a64d68');
+            if (rightHalf[r][col] === '1') px(c, rx + col, oy + r, 1, 1, PAL.outlinePlum);
+            if (rightHalf[r][col] === '3') px(c, rx + col, oy + r, 1, 1, '#853c56');
+          }
+        }
+      }
+
+      // Maceta de terracota con planta frondosa estilo Minish Cap (14x18 virtual px)
+      function drawPottedPlant(c, x, y) {
+        const ox = Math.round(x);
+        const oy = Math.round(y);
+        // Sombra suelo
+        c.fillStyle = 'rgba(46, 29, 48, 0.28)';
+        c.fillRect(ox - 5, oy - 1, 10, 3);
+        // Maceta terracota
+        px(c, ox - 4, oy - 7, 8, 7, PAL.outlineWarm);
+        px(c, ox - 5, oy - 8, 10, 3, PAL.outlineWarm);
+        px(c, ox - 3, oy - 5, 6, 4, '#c96138');
+        px(c, ox - 3, oy - 5, 2, 4, '#e6895c');
+        px(c, ox + 1, oy - 5, 2, 4, '#9e4225');
+        // Borde maceta
+        px(c, ox - 4, oy - 7, 8, 2, '#d97045');
+        px(c, ox - 4, oy - 7, 3, 1, '#f2a279');
+        // Hojas frondosas en capas
+        px(c, ox - 6, oy - 15, 12, 8, PAL.outlineLeaf);
+        px(c, ox - 4, oy - 17, 8, 10, PAL.outlineLeaf);
+        px(c, ox - 5, oy - 14, 10, 6, PAL.leafDark);
+        px(c, ox - 4, oy - 15, 8, 6, PAL.leafMid);
+        px(c, ox - 3, oy - 16, 6, 4, PAL.leafLight);
+        // Brillos cálidos en hojas
+        px(c, ox - 3, oy - 15, 2, 2, PAL.leafHi);
+        px(c, ox + 1, oy - 14, 2, 1, PAL.leafHi);
+        px(c, ox - 5, oy - 12, 2, 1, PAL.leafLight);
+      }
+
+      // Librero / escritorio del profesor con libros y pergamino
+      function drawTeacherBookshelf(c, x, y) {
+        const ox = Math.round(x);
+        const oy = Math.round(y);
+        // Sombra
+        c.fillStyle = 'rgba(46, 29, 48, 0.26)';
+        c.fillRect(ox - 13, oy - 1, 26, 4);
+        // Cuerpo madera
+        px(c, ox - 13, oy - 14, 26, 14, PAL.outlineWarm);
+        px(c, ox - 12, oy - 13, 24, 12, PAL.woodMid);
+        px(c, ox - 12, oy - 13, 24, 2, PAL.woodHi);
+        // Repisa interior con libros de colores
+        px(c, ox - 11, oy - 10, 22, 8, PAL.woodDeep);
+        // Fila de libros
+        const bookColors = ['#c9324b', '#3675b8', '#4ca64c', '#e6b34c', '#785db3', '#d97045', '#2d9491'];
+        for (let i = 0; i < 7; i++) {
+          const bx = ox - 10 + i * 3;
+          const bh = 5 + (i % 2);
+          px(c, bx, oy - 3 - bh, 2, bh, bookColors[i]);
+          px(c, bx, oy - 3 - bh, 1, 1, PAL.creamHi);
+        }
+        // Pergamino enrollado y tintero encima
+        px(c, ox - 9, oy - 16, 8, 3, PAL.outlineWarm);
+        px(c, ox - 8, oy - 15, 6, 2, PAL.creamHi);
+        px(c, ox - 5, oy - 15, 1, 2, '#c9324b'); // listón rojo
+        px(c, ox + 4, oy - 16, 4, 3, PAL.outlineNavy);
+        px(c, ox + 5, oy - 15, 2, 1, '#63a8e6');
+      }
+
+      // Pupitre detallado con sombra propia, patas y cuaderno/tintero encima
+      function drawStudentDesk(c, cx, cy, desk) {
+        const dw = 26;
+        const dh = 14;
+        const ox = Math.round(cx - dw / 2);
+        const oy = Math.round(cy - dh / 2);
+
+        // Sombra proyectada en el piso
+        c.fillStyle = 'rgba(46, 29, 48, 0.24)';
+        c.fillRect(ox + 1, oy + 5, dw, dh - 1);
+
+        // Banquito / silla debajo
+        px(c, ox + 7, oy + dh - 2, 12, 5, PAL.outlineWarm);
+        px(c, ox + 8, oy + dh - 1, 10, 3, PAL.woodDark);
+        px(c, ox + 8, oy + dh - 1, 10, 1, PAL.woodLight);
+
+        // Patas frontales y faldón del pupitre
+        px(c, ox + 1, oy + dh - 4, 3, 6, PAL.outlineWarm);
+        px(c, ox + dw - 4, oy + dh - 4, 3, 6, PAL.outlineWarm);
+        px(c, ox + 2, oy + dh - 3, 1, 4, PAL.woodDark);
+        px(c, ox + dw - 3, oy + dh - 3, 1, 4, PAL.woodDark);
+
+        // Cubierta de madera tallada
+        px(c, ox, oy, dw, dh - 2, PAL.outlineWarm);
+        px(c, ox + 1, oy + 1, dw - 2, dh - 4, PAL.woodMid);
+        px(c, ox + 1, oy + 1, dw - 2, 2, PAL.woodHi); // bisel superior iluminado
+        px(c, ox + 1, oy + dh - 4, dw - 2, 1, PAL.woodDeep); // canto frontal sombreado
+        // Veta sutil en cubierta
+        px(c, ox + 4, oy + 4, 7, 1, PAL.woodLight);
+        px(c, ox + 15, oy + 6, 6, 1, PAL.woodDark);
+
+        // Utilería encima del pupitre
+        if (desk.prop === 0) {
+          // Libro abierto crema con páginas
+          px(c, ox + 5, oy + 2, 9, 6, PAL.outlineWarm);
+          px(c, ox + 6, oy + 3, 3, 4, PAL.creamHi);
+          px(c, ox + 10, oy + 3, 3, 4, '#f0d8a8');
+          px(c, ox + 9, oy + 3, 1, 4, '#b5773a');
+        } else if (desk.prop === 1) {
+          // Pergamino y tintero
+          px(c, ox + 6, oy + 3, 7, 5, PAL.outlineWarm);
+          px(c, ox + 7, oy + 4, 5, 3, PAL.creamHi);
+          px(c, ox + 16, oy + 3, 3, 4, PAL.outlineNavy);
+          px(c, ox + 17, oy + 4, 1, 1, '#85d2ff');
+        } else {
+          // Cuaderno azul con pluma
+          px(c, ox + 11, oy + 2, 7, 6, PAL.outlineNavy);
+          px(c, ox + 12, oy + 3, 5, 4, '#3675b8');
+          px(c, ox + 13, oy + 4, 3, 1, PAL.goldHi);
+          px(c, ox + 6, oy + 4, 3, 1, PAL.creamHi);
+        }
+      }
+
+      // Farol/aplique de latón en pared con halo cálido GBA al atardecer/noche
+      function drawWallLantern(c, x, y, strength, tSec) {
+        const ox = Math.round(x);
+        const oy = Math.round(y);
+        // Soporte de latón
+        px(c, ox - 3, oy - 6, 6, 11, PAL.outlineWarm);
+        px(c, ox - 2, oy - 5, 4, 2, PAL.goldMid);
+        px(c, ox - 1, oy - 5, 2, 1, PAL.goldHi);
+        px(c, ox - 2, oy + 2, 4, 2, PAL.goldShd);
+
+        // Cristal y flama
+        if (strength > 0.05) {
+          const flick = Math.sin(tSec * 14 + ox) > -0.2;
+          px(c, ox - 2, oy - 3, 4, 5, '#e86a2c');
+          px(c, ox - 1, oy - 2, 2, 4, flick ? '#fff7cc' : '#f7c242');
+          px(c, ox, oy - 2, 1, 2, '#ffffff');
+        } else {
+          px(c, ox - 2, oy - 3, 4, 5, '#8ca8b8');
+          px(c, ox - 1, oy - 2, 1, 3, '#d6eef5');
+        }
+      }
+
+      function drawLanternGlow(c, x, y, strength, tSec) {
+        if (strength <= 0.05) return;
+        const flick = 1 + 0.07 * Math.sin(tSec * 13 + x) + 0.04 * Math.cos(tSec * 23);
+        const rad = Math.round(30 * flick);
+        const grad = c.createRadialGradient(x, y, 2, x, y, rad);
+        grad.addColorStop(0, `rgba(255, 238, 168, ${(0.42 * strength).toFixed(3)})`);
+        grad.addColorStop(0.45, `rgba(247, 178, 72, ${(0.20 * strength).toFixed(3)})`);
+        grad.addColorStop(1, 'rgba(247, 178, 72, 0)');
+        c.fillStyle = grad;
+        c.fillRect(Math.round(x - rad), Math.round(y - rad), rad * 2, rad * 2);
+      }
+
+      // Alfombra tejida estilo Hyrule con bordes dorados/carmesí y flecos
+      function drawHyruleRug(c, rx, ry, rw, rh) {
+        const x = Math.round(rx);
+        const y = Math.round(ry);
+        const w = Math.round(rw);
+        const h = Math.round(rh);
+        if (w < 24 || h < 18) return;
+
+        // Sombra sutil
+        c.fillStyle = 'rgba(46, 29, 48, 0.16)';
+        c.fillRect(x, y + 1, w, h);
+
+        // Flecos laterales crema
+        for (let fy = y + 1; fy < y + h - 1; fy += 2) {
+          px(c, x - 2, fy, 2, 1, PAL.creamHi);
+          px(c, x + w, fy, 2, 1, PAL.creamHi);
+        }
+
+        // Borde exterior carmesí oscuro + marco dorado
+        px(c, x, y, w, h, PAL.crimsonDark);
+        px(c, x + 1, y + 1, w - 2, h - 2, PAL.crimsonMid);
+        px(c, x + 3, y + 3, w - 6, h - 6, PAL.goldMid);
+        px(c, x + 4, y + 4, w - 8, h - 8, '#a62840');
+        px(c, x + 5, y + 5, w - 10, h - 10, PAL.crimsonMid);
+
+        // Esquinas ornamentales doradas
+        px(c, x + 4, y + 4, 2, 2, PAL.goldHi);
+        px(c, x + w - 6, y + 4, 2, 2, PAL.goldHi);
+        px(c, x + 4, y + h - 6, 2, 2, PAL.goldHi);
+        px(c, x + w - 6, y + h - 6, 2, 2, PAL.goldHi);
+
+        // Rombo central tejido crema y turquesa
+        const cx = Math.round(x + w / 2);
+        const cy = Math.round(y + h / 2);
+        const rRad = Math.min(7, Math.floor(Math.min(w, h) / 4));
+        for (let dy = -rRad; dy <= rRad; dy++) {
+          const span = rRad - Math.abs(dy);
+          px(c, cx - span, cy + dy, span * 2 + 1, 1, PAL.goldHi);
+          if (span >= 2) {
+            px(c, cx - (span - 2), cy + dy, (span - 2) * 2 + 1, 1, '#2d9491');
+          }
+          if (span >= 4) {
+            px(c, cx - (span - 4), cy + dy, (span - 4) * 2 + 1, 1, PAL.creamHi);
+          }
+        }
+      }
+
+      // Render completo del aula en el canvas virtual offscreen y blit nítido al visor
+      function renderClassroom(timestamp) {
+        resizeDisplayCanvas();
+        const tSec = timestamp * 0.001;
+
+        // 1 loseta = 0.5 m × 0.5 m = 16 × 16 píxeles virtuales GBA (32 px/m)
+        const pxPerM = 32;
+        const tilesX = Math.max(6, Math.round(params.L * 2));
+        const tilesY = Math.max(6, Math.round(params.W * 2));
+        const roomW  = tilesX * 16;
+        const floorH = tilesY * 16;
+        const wallH  = Math.round(18 + params.H * 13); // escala visible con H (57px en H=3m)
+
+        const padTop = 10;
+        const padBot = 12;
+        const padSide = 16;
+
+        const minH = wallH + floorH + padTop + padBot;
+        const aspect = displayCanvas.width / Math.max(1, displayCanvas.height);
+        let vw = Math.max(roomW + padSide * 2, Math.round(minH * aspect));
+        let vh = Math.max(minH, Math.round(vw / aspect));
+
+        if (vCanvas.width !== vw || vCanvas.height !== vh) {
+          vCanvas.width = vw;
+          vCanvas.height = vh;
+        }
+
+        const c = vCtx;
+        c.imageSmoothingEnabled = false;
+
+        const originX   = Math.round((vw - roomW) / 2);
+        const wallTopY  = Math.round((vh - (wallH + floorH)) / 2);
+        const floorTopY = wallTopY + wallH;
+
+        const hourFloat = getHourFloat(state.simTime);
+        const light = getLighting(hourFloat);
+
+        // Actualizar barra superior del visor (sin recorte)
+        const lightBadge = document.getElementById('lighting-badge');
+        if (lightBadge) {
+          lightBadge.textContent = `${light.icon} ${light.label} · ${formatClock(state.simTime)} · Batch Isotérmico`;
+        }
+
+        // --- A. FONDO INTERIOR ESTILO HYRULE (VOID CIRUELA PROFUNDO) ---
+        px(c, 0, 0, vw, vh, PAL.voidBg);
+        // Sutil textura de mampostería oscura alrededor de la sala
+        c.fillStyle = '#2a2033';
+        for (let by = 0; by < vh; by += 12) {
+          const offset = (Math.floor(by / 12) % 2) * 10;
+          for (let bx = -offset; bx < vw; bx += 20) {
+            c.fillRect(bx + 1, by + 1, 18, 10);
+          }
+        }
+
+        // Muros arquitectónicos gruesos rodeando el aula
+        px(c, originX - 8, wallTopY - 7, roomW + 16, wallH + floorH + 15, PAL.outlineWarm);
+        px(c, originX - 7, wallTopY - 6, roomW + 14, wallH + floorH + 13, '#5c3c34');
+        px(c, originX - 5, wallTopY - 4, roomW + 10, wallH + floorH + 9, '#7a5547');
+        px(c, originX - 4, wallTopY - 3, roomW + 8, wallH + floorH + 7, PAL.outlineWarm);
+
+        // --- B. PARED TRASERA ESTILO CIUDADELA DE HYRULE (ESCALA CON H) ---
+        // Estuco crema cálido
+        px(c, originX, wallTopY, roomW, wallH, '#f2e0bd');
+        px(c, originX, wallTopY, roomW, Math.round(wallH * 0.25), '#e8d0a4');
+
+        // Detalles suaves de piedra/ladrillo en las esquinas (quoins) y parches de estuco
+        for (let qy = wallTopY + 6; qy < floorTopY - 14; qy += 8) {
+          const qw = ((qy - wallTopY) % 16 === 0) ? 9 : 6;
+          px(c, originX, qy, qw, 6, '#d9bc8f');
+          px(c, originX, qy + 5, qw, 1, '#ba976a');
+          px(c, originX + roomW - qw, qy, qw, 6, '#d9bc8f');
+          px(c, originX + roomW - qw, qy + 5, qw, 1, '#ba976a');
+        }
+        // Pequeños ladrillos suaves en la pared superior
+        px(c, originX + Math.round(roomW * 0.45), wallTopY + 9, 8, 4, '#e3c79b');
+        px(c, originX + Math.round(roomW * 0.49), wallTopY + 13, 7, 4, '#e3c79b');
+
+        // Viga superior de madera con ménsulas
+        px(c, originX, wallTopY, roomW, 6, PAL.woodDeep);
+        px(c, originX, wallTopY + 1, roomW, 3, PAL.woodDark);
+        px(c, originX, wallTopY + 1, roomW, 1, PAL.woodMid);
+        px(c, originX, wallTopY + 6, roomW, 1, 'rgba(46, 29, 48, 0.22)');
+        for (let cx = originX + 16; cx < originX + roomW - 12; cx += 32) {
+          px(c, cx, wallTopY + 5, 5, 4, PAL.outlineWarm);
+          px(c, cx + 1, wallTopY + 5, 3, 3, PAL.woodMid);
+        }
+
+        // Zoclo inferior de madera tallada (wainscoting)
+        const wainH = Math.max(12, Math.min(20, Math.round(wallH * 0.30)));
+        const wainY = floorTopY - wainH;
+        px(c, originX, wainY - 2, roomW, 2, PAL.outlineWarm);
+        px(c, originX, wainY - 1, roomW, 1, PAL.woodHi);
+        px(c, originX, wainY, roomW, wainH, PAL.woodMid);
+        px(c, originX, floorTopY - 2, roomW, 2, PAL.woodDeep);
+        // Paneles tallados repetidos
+        for (let wx = originX + 4; wx < originX + roomW - 10; wx += 16) {
+          px(c, wx, wainY + 2, 12, wainH - 5, PAL.woodDark);
+          px(c, wx + 1, wainY + 3, 10, wainH - 7, PAL.woodMid);
+          px(c, wx + 1, wainY + 3, 10, 1, PAL.woodLight);
+        }
+
+        // --- C. VENTANAS ARQUEADAS CON MULLIONS Y CIELO ANIMADO ---
+        const winW = 24;
+        const winH = Math.max(20, Math.min(44, Math.round(wallH * 0.50)));
+        const winY = Math.max(wallTopY + 9, Math.round(wallTopY + wallH * 0.16));
+        const winXs = [
+          Math.round(originX + roomW * 0.08),
+          Math.round(originX + roomW * 0.62)
+        ];
+
+        for (const wx of winXs) {
+          // Marco arqueado exterior
+          px(c, wx - 2, winY + 2, winW + 4, winH, PAL.outlineWarm);
+          px(c, wx, winY, winW, winH + 2, PAL.outlineWarm);
+          px(c, wx - 1, winY + 2, winW + 2, winH - 1, PAL.woodDark);
+          px(c, wx + 1, winY + 1, winW - 2, winH, PAL.woodLight);
+
+          // Recorte interior de cristal arqueado
+          const gx = wx + 2, gy = winY + 3, gw = winW - 4, gh = winH - 4;
+          c.save();
+          c.beginPath();
+          c.rect(gx, gy, gw, gh);
+          c.clip();
+
+          // Cielo en 3 bandas GBA
+          const b1 = Math.round(gh * 0.38);
+          const b2 = Math.round(gh * 0.34);
+          px(c, gx, gy, gw, b1, light.skyTop);
+          px(c, gx, gy + b1, gw, b2, light.skyMid);
+          px(c, gx, gy + b1 + b2, gw, gh - b1 - b2, light.skyBot);
+
+          if (light.isNight) {
+            // Luna creciente
+            const mx = gx + gw - 7;
+            const my = gy + 3;
+            px(c, mx, my, 4, 4, PAL.creamHi);
+            px(c, mx + 2, my, 2, 3, light.skyTop);
+            // Estrellas parpadeantes
+            const tw = Math.floor(tSec * 3.5) % 2 === 0;
+            px(c, gx + 3, gy + 4, 1, 1, tw ? '#ffffff' : '#9eb8f5');
+            px(c, gx + 9, gy + 7, 1, 1, tw ? '#9eb8f5' : '#ffffff');
+            px(c, gx + 5, gy + 12, 1, 1, '#fff3c4');
+            px(c, gx + 14, gy + 11, 1, 1, tw ? '#ffffff' : '#9eb8f5');
+          } else {
+            // Sol cálido
+            const sunP = Math.max(0, Math.min(1, (hourFloat - 5.5) / 14));
+            const sx = gx + Math.round(2 + (gw - 7) * sunP);
+            const sy = gy + Math.round(gh * 0.45 - Math.sin(sunP * Math.PI) * (gh * 0.30));
+            px(c, sx, sy, 4, 4, '#fff3a6');
+            px(c, sx + 1, sy + 1, 2, 2, '#ffffff');
+            // Nubes pixeladas suaves
+            for (const cl of state.clouds) {
+              const cx = gx + Math.round(cl.x * gw);
+              const cy = gy + Math.round(cl.y * gh);
+              px(c, cx, cy, 7, 3, '#ffffff');
+              px(c, cx + 1, cy - 1, 5, 2, '#ffffff');
+              px(c, cx, cy + 2, 7, 1, '#cfe9ff');
+            }
+          }
+          c.restore();
+
+          // Divisiones de ventana (mullions en cruz) y repisa
+          px(c, gx + Math.floor(gw / 2), gy, 1, gh, PAL.woodDark);
+          px(c, gx, gy + Math.floor(gh / 2), gw, 1, PAL.woodDark);
+          px(c, wx - 3, winY + winH + 1, winW + 6, 3, PAL.outlineWarm);
+          px(c, wx - 2, winY + winH + 2, winW + 4, 1, PAL.woodHi);
+        }
+
+        // --- D. PIZARRÓN VERDE BOSQUE CON MARCO TALLADO ("2S ⇌ L* → P") ---
+        const boardW = Math.max(66, Math.min(84, Math.round(roomW * 0.34)));
+        const boardH = 26;
+        const boardX = Math.round(originX + roomW * 0.25);
+        const boardY = Math.max(wallTopY + 10, Math.min(floorTopY - boardH - 12, Math.round(wallTopY + wallH * 0.24)));
+
+        // Sombra pizarrón
+        c.fillStyle = 'rgba(46, 29, 48, 0.22)';
+        c.fillRect(boardX - 1, boardY + 2, boardW + 4, boardH + 4);
+        // Marco tallado
+        px(c, boardX - 3, boardY - 3, boardW + 6, boardH + 6, PAL.outlineWarm);
+        px(c, boardX - 2, boardY - 2, boardW + 4, boardH + 4, PAL.woodMid);
+        px(c, boardX - 2, boardY - 2, boardW + 4, 1, PAL.woodHi);
+        // Pizarra verde bosque
+        px(c, boardX, boardY, boardW, boardH, PAL.outlineLeaf);
+        px(c, boardX + 1, boardY + 1, boardW - 2, boardH - 2, '#245c3c');
+        px(c, boardX + 2, boardY + 2, boardW - 4, boardH - 4, '#2c6e47');
+        // Texto nítido en gis bitmap
+        drawPixelText(c, '2S ⇌ L* → P', boardX + boardW / 2, boardY + 9, '#f2fce8', true);
+        // Pequeña línea de fórmulas/subrayado en gis
+        px(c, boardX + 12, boardY + 15, boardW - 24, 1, '#79bd8f');
+        drawPixelText(c, 'BATCH', boardX + boardW / 2, boardY + 20, '#bce8c8', true);
+
+        // Repisa con gises y borrador
+        px(c, boardX - 3, boardY + boardH + 2, boardW + 6, 3, PAL.outlineWarm);
+        px(c, boardX - 2, boardY + boardH + 3, boardW + 4, 1, PAL.woodLight);
+        px(c, boardX + 6, boardY + boardH + 1, 5, 2, PAL.creamHi); // gis blanco
+        px(c, boardX + 13, boardY + boardH + 1, 4, 2, '#f7d88b'); // gis amarillo
+        px(c, boardX + boardW - 14, boardY + boardH, 7, 3, '#a8442a'); // borrador
+
+        // --- E. DOS FAROLES DE LATÓN FLANQUEANDO EL PIZARRÓN ---
+        const lanternY = Math.max(wallTopY + 18, boardY + 11);
+        const lantern1X = boardX - 10;
+        const lantern2X = boardX + boardW + 10;
+        drawWallLantern(c, lantern1X, lanternY, light.lanternStrength, tSec);
+        drawWallLantern(c, lantern2X, lanternY, light.lanternStrength, tSec);
+
+        // --- F. PUERTA DE MADERA REFORZADA SIEMPRE CERRADA ("BATCH CERRADO") ---
+        const doorW = 24;
+        const doorH = Math.min(34, wallH - 12);
+        const doorX = Math.round(originX + roomW - doorW - 10);
+        const doorY = floorTopY - doorH;
+
+        px(c, doorX - 2, doorY - 2, doorW + 4, doorH + 2, PAL.outlineWarm);
+        px(c, doorX - 1, doorY - 1, doorW + 2, doorH + 1, PAL.woodDark);
+        px(c, doorX, doorY, doorW, doorH, PAL.woodMid);
+        // Tablas verticales de la puerta
+        for (let dx = doorX + 6; dx < doorX + doorW - 2; dx += 6) {
+          px(c, dx, doorY + 1, 1, doorH - 2, PAL.woodDeep);
+        }
+        // Herrajes metálicos
+        px(c, doorX + 1, doorY + 6, doorW - 2, 2, '#4a556e');
+        px(c, doorX + 1, doorY + 6, doorW - 2, 1, '#7d8ba8');
+        px(c, doorX + 1, doorY + doorH - 8, doorW - 2, 2, '#4a556e');
+        px(c, doorX + 1, doorY + doorH - 8, doorW - 2, 1, '#7d8ba8');
+        // Argolla dorada
+        px(c, doorX + doorW - 6, doorY + Math.round(doorH * 0.50), 3, 4, PAL.outlineWarm);
+        px(c, doorX + doorW - 5, doorY + Math.round(doorH * 0.50) + 1, 2, 2, PAL.goldHi);
+
+        // Sello rojo de madera "BATCH CERRADO" encima de la puerta
+        const plaqueW = 56;
+        const plaqueH = 9;
+        const plaqueX = Math.min(originX + roomW - plaqueW - 2, Math.max(originX + 2, Math.round(doorX + doorW / 2 - plaqueW / 2)));
+        const plaqueY = Math.max(wallTopY + 7, doorY - plaqueH - 2);
+        px(c, plaqueX, plaqueY, plaqueW, plaqueH, PAL.outlinePlum);
+        px(c, plaqueX + 1, plaqueY + 1, plaqueW - 2, plaqueH - 2, PAL.crimsonDark);
+        px(c, plaqueX + 1, plaqueY + 1, plaqueW - 2, 1, PAL.crimsonHi);
+        drawPixelText(c, 'BATCH CERRADO', plaqueX + plaqueW / 2, plaqueY + 4, PAL.creamHi, true);
+
+        // --- G. PISO DE TABLONES DE ROBLE PULIDO (16×16 px = 0.5m × 0.5m) ---
+        for (let r = 0; r < tilesY; r++) {
+          for (let col = 0; col < tilesX; col++) {
+            const tx = originX + col * 16;
+            const ty = floorTopY + r * 16;
+            // Dos tablas horizontales de 8px de alto por cada tile de 16x16
+            for (let p = 0; p < 2; p++) {
+              const py = ty + p * 8;
+              const hash = (r * 7 + col * 13 + p * 5) % 4;
+              const baseCol = hash === 0 ? '#d9a45b' : (hash === 1 ? '#cf984e' : (hash === 2 ? '#c98e46' : '#d49b54'));
+              px(c, tx, py, 16, 8, baseCol);
+              // Bisel superior claro + junta oscura entre tablas
+              px(c, tx, py, 16, 1, '#e3b56f');
+              px(c, tx, py + 7, 16, 1, '#a36a33');
+              // Junta vertical escalonada de tablón
+              const jointX = tx + ((r + p) % 2 === 0 ? 0 : 8);
+              px(c, jointX, py, 1, 7, '#a36a33');
+              // Veta sutil de madera
+              if (hash === 0 || hash === 2) {
+                px(c, tx + 3 + (hash * 2), py + 3, 5, 1, '#ba7e3d');
+              }
+              if (hash === 1) {
+                px(c, tx + 2, py + 4, 4, 1, '#e0b069');
+              }
+            }
+          }
+        }
+
+        // Sombra ambiental proyectada por la pared trasera (escala con H)
+        const wallShadowH = Math.min(26, Math.round(6 + params.H * 2.2));
+        const shGrad = c.createLinearGradient(0, floorTopY, 0, floorTopY + wallShadowH);
+        shGrad.addColorStop(0, 'rgba(46, 29, 48, 0.30)');
+        shGrad.addColorStop(1, 'rgba(46, 29, 48, 0)');
+        c.fillStyle = shGrad;
+        c.fillRect(originX, floorTopY, roomW, wallShadowH);
+
+        // --- H. ALFOMBRAS TEJIDAS DECORATIVAS ESTILO HYRULE ---
+        if (params.L >= 6) {
+          const rugW = Math.min(72, Math.round(roomW * 0.28));
+          const rugH = Math.min(44, Math.round(floorH * 0.26));
+          drawHyruleRug(c, originX + Math.round(roomW * 0.14), floorTopY + Math.round(floorH * 0.38), rugW, rugH);
+          drawHyruleRug(c, originX + Math.round(roomW * 0.58), floorTopY + Math.round(floorH * 0.38), rugW, rugH);
+        } else {
+          const rugW = Math.min(68, Math.round(roomW * 0.48));
+          const rugH = Math.min(40, Math.round(floorH * 0.30));
+          drawHyruleRug(c, originX + Math.round((roomW - rugW) / 2), floorTopY + Math.round((floorH - rugH) / 2), rugW, rugH);
+        }
+
+        // --- I. HACES DE LUZ DIAGONALES DESDE LAS VENTANAS SOBRE EL PISO ---
+        for (const wx of winXs) {
+          c.save();
+          c.fillStyle = light.beamColor;
+          c.beginPath();
+          c.moveTo(wx + 2, floorTopY);
+          c.lineTo(wx + winW - 2, floorTopY);
+          c.lineTo(wx + winW + 14, floorTopY + Math.min(floorH * 0.55, 62));
+          c.lineTo(wx - 10, floorTopY + Math.min(floorH * 0.55, 62));
+          c.closePath();
+          c.fill();
+          c.restore();
+        }
+
+        // --- J. ORDENAMIENTO 2.5D (Y-SORT): MACETAS, LIBRERO, PUPITRES Y PERSONAJES ---
+        const drawables = [];
+
+        // Macetas en esquinas superiores
+        drawables.push({
+          y: 0.34,
+          draw: () => drawPottedPlant(c, originX + 12, floorTopY + 11)
+        });
+        drawables.push({
+          y: 0.34,
+          draw: () => drawPottedPlant(c, originX + roomW - 11, floorTopY + 11)
+        });
+
+        // Librero / escritorio del profesor pegado a la pared frontal izquierda-centro
+        if (params.L >= 4.5) {
+          drawables.push({
+            y: 0.38,
+            draw: () => drawTeacherBookshelf(c, originX + Math.round(roomW * 0.36), floorTopY + 12)
+          });
+        }
+
+        // Pupitres de madera
+        for (const desk of state.desks) {
+          drawables.push({
+            y: desk.y,
+            draw: () => {
+              const dx = originX + desk.x * pxPerM;
+              const dy = floorTopY + desk.y * pxPerM;
+              drawStudentDesk(c, dx, dy, desk);
+            }
+          });
+        }
+
+        // Personajes Chibi GBA (16x22 cacheados)
+        for (const ag of state.agents) {
+          drawables.push({
+            y: ag.y,
+            draw: () => {
+              const sx = originX + ag.x * pxPerM;
+              const sy = floorTopY + ag.y * pxPerM;
+              const phase = Math.floor(ag.walkPhase) % 4;
+              const sprite = getChibiSprite(ag, ag.state, ag.dir, phase);
+              c.drawImage(sprite, Math.round(sx - 8), Math.round(sy - 20));
+            }
+          });
+        }
+
+        drawables.sort((a, b) => a.y - b.y);
+        for (const item of drawables) item.draw();
+
+        // --- K. INDICADORES FLOTANTES GBA PARA LIGUES (L*) Y PAREJAS (P) ---
+        for (const lig of state.ligues) {
+          const sx = Math.round(originX + lig.x * pxPerM);
+          const bobY = Math.round(Math.sin(tSec * 5 + lig.phase) * 1.6);
+          const sy = Math.round(floorTopY + lig.y * pxPerM - 25 + bobY);
+
+          // Globo pixel art crema con contorno ciruela
+          px(c, sx - 8, sy - 6, 16, 10, PAL.outlinePlum);
+          px(c, sx - 7, sy - 5, 14, 8, PAL.creamHi);
+          // Colita del globo
+          px(c, sx - 1, sy + 4, 3, 2, PAL.outlinePlum);
+          px(c, sx, sy + 4, 1, 1, PAL.creamHi);
+
+          const mode = Math.floor(tSec * 2.2 + lig.id) % 2;
+          if (mode === 0) {
+            drawHalfHeart(c, sx, sy - 1, Math.floor(tSec * 4.4) % 2 === 0);
+          } else {
+            // Puntos suspensivos + chispas doradas
+            const dotStep = Math.floor(tSec * 5) % 3;
+            px(c, sx - 4, sy - 1 - (dotStep === 0 ? 1 : 0), 2, 2, PAL.goldShd);
+            px(c, sx - 1, sy - 1 - (dotStep === 1 ? 1 : 0), 2, 2, PAL.goldMid);
+            px(c, sx + 2, sy - 1 - (dotStep === 2 ? 1 : 0), 2, 2, PAL.crimsonMid);
+          }
+        }
+
+        for (const cp of state.couples) {
+          const sx = Math.round(originX + cp.x * pxPerM);
+          const bobY = Math.round(Math.sin(tSec * 3.4 + cp.id) * 1.5);
+          const sy = Math.round(floorTopY + cp.y * pxPerM - 25 + bobY);
+          drawHeartContainer(c, sx, sy);
+        }
+
+        // --- L. PARTÍCULAS (RUPTURA k2: CORAZÓN QUEBRADO + POLVO; FORMALIZACIÓN k3: DESTELLOS) ---
+        for (const pt of state.particles) {
+          const prog = pt.age / pt.maxAge;
+          const sx = Math.round(originX + pt.x * pxPerM);
+          const sy = Math.round(floorTopY + pt.y * pxPerM - 22 - prog * 14);
+          c.save();
+          c.globalAlpha = Math.max(0, 1 - prog);
+
+          if (pt.type === 'broken_heart') {
+            drawBrokenHeart(c, sx, sy, Math.round(prog * 3));
+            // Nubecitas de polvo estilo Minish Cap al separarse
+            const puffR = Math.round(4 + prog * 9);
+            px(c, sx - puffR, sy + 14, 3, 3, '#e6dac5');
+            px(c, sx + puffR - 2, sy + 14, 3, 3, '#e6dac5');
+            px(c, sx - puffR + 1, sy + 13, 1, 1, '#fff3c4');
+            px(c, sx + puffR - 1, sy + 13, 1, 1, '#fff3c4');
+          } else if (pt.type === 'heart_burst') {
+            drawHeartContainer(c, sx, sy - 2);
+            const r = Math.round(4 + prog * 13);
+            // Estrellitas doradas de logro Zelda
+            px(c, sx - r, sy, 2, 2, PAL.goldHi);
+            px(c, sx + r - 1, sy, 2, 2, PAL.goldHi);
+            px(c, sx, sy - r, 2, 2, PAL.creamHi);
+            px(c, sx - Math.round(r * 0.7), sy - Math.round(r * 0.7), 1, 1, '#ffffff');
+            px(c, sx + Math.round(r * 0.7), sy - Math.round(r * 0.7), 1, 1, '#ffffff');
+          } else {
+            // Chispas doradas al iniciar ligue
+            const r = Math.round(3 + prog * 10);
+            px(c, sx - r, sy, 2, 2, PAL.goldHi);
+            px(c, sx + r, sy, 2, 2, PAL.goldHi);
+            px(c, sx, sy - r, 2, 2, PAL.creamHi);
+          }
+          c.restore();
+        }
+
+        // --- M. ILUMINACIÓN AMBIENTAL DÍA / TARDE / NOCHE + HALOS DE FAROLES ---
+        if (light.atten > 0) {
+          c.fillStyle = light.tintRgba;
+          c.fillRect(originX, wallTopY, roomW, wallH + floorH);
+        }
+        drawLanternGlow(c, lantern1X, lanternY, light.lanternStrength, tSec);
+        drawLanternGlow(c, lantern2X, lanternY, light.lanternStrength, tSec);
+
+        // --- N. BLIT FINAL NÍTIDO DEL CANVAS LÓGICO GBA AL CANVAS VISIBLE ---
+        displayCtx.imageSmoothingEnabled = false;
+        displayCtx.fillStyle = PAL.voidBg;
+        displayCtx.fillRect(0, 0, displayCanvas.width, displayCanvas.height);
+
+        const scale = Math.min(displayCanvas.width / vw, displayCanvas.height / vh);
+        const drawW = Math.round(vw * scale);
+        const drawH = Math.round(vh * scale);
+        const drawX = Math.round((displayCanvas.width - drawW) / 2);
+        const drawY = Math.round((displayCanvas.height - drawH) / 2);
+
+        displayCtx.drawImage(vCanvas, 0, 0, vw, vh, drawX, drawY, drawW, drawH);
+      }
+
+      // =========================================================================
+      // 7. GRÁFICA INTERACTIVA PLOTLY.JS (VISTA BASE + MODO AVANZADO)
+      // =========================================================================
+      function renderPlotlyChart() {
+        const d = getDerived();
+        const chartDiv = document.getElementById('plotly-chart');
+        if (!chartDiv || typeof Plotly === 'undefined') return;
+
+        const traces = [];
+        let titleText = '';
+        let yAxisTitle = '';
+
+        if (state.activeChart === 'pairs') {
+          titleText = state.advancedMode
+            ? 'Parejas (N_P) y Ligues (N_L*) — Vista Completa (AEPE vs EDOs Exactas + Monte Carlo)'
+            : 'Parejas (N_P) y Ligues (N_L*) — Modelo Base AEPE vs Corrida Actual';
+          yAxisTitle = 'Número de Parejas / Ligues';
+
+          if (state.advancedMode && state.mc) {
+            const upper = state.mc.Np.map((m, i) => m + state.mc.stdNp[i]);
+            const lower = state.mc.Np.map((m, i) => Math.max(params.Npo, m - state.mc.stdNp[i]));
+            traces.push({
+              x: [...state.daysArr, ...state.daysArr.slice().reverse()],
+              y: [...upper, ...lower.slice().reverse()],
+              fill: 'toself',
+              fillcolor: 'rgba(147, 51, 234, 0.12)',
+              line: { color: 'transparent' },
+              name: 'Banda ±1σ Monte Carlo',
+              hoverinfo: 'skip',
+              showlegend: true
+            });
+          }
+
+          traces.push({
+            x: state.daysArr,
+            y: state.aepe.Np,
+            name: 'N_P Modelo Base AEPE',
+            mode: 'lines',
+            line: { color: '#4f46e5', width: 2.8 }
+          });
+
+          traces.push({
+            x: state.stoch.days,
+            y: state.stoch.Np,
+            name: 'N_P Simulación Aula (Actual)',
+            mode: 'lines',
+            line: { color: '#f43f5e', width: 2.6, shape: 'hv' }
+          });
+
+          traces.push({
+            x: state.stoch.days,
+            y: state.stoch.Nl,
+            name: 'N_L* Ligues en Aula',
+            mode: 'lines',
+            line: { color: '#d97706', width: 1.7, shape: 'hv' },
+            opacity: 0.78
+          });
+
+          if (state.advancedMode) {
+            traces.push({
+              x: state.daysArr,
+              y: state.rk4.Np,
+              name: 'N_P EDOs Exactas (RK4)',
+              mode: 'lines',
+              line: { color: '#0d9488', width: 2.5, dash: 'dash' }
+            });
+            traces.push({
+              x: state.daysArr,
+              y: state.rk4.Nl,
+              name: 'N_L* EDOs Exactas (RK4)',
+              mode: 'lines',
+              line: { color: '#f59e0b', width: 1.8, dash: 'dot' }
+            });
+            if (state.mc) {
+              traces.push({
+                x: state.daysArr,
+                y: state.mc.Np,
+                name: `N_P Promedio MC (${state.mc.runs}x)`,
+                mode: 'lines',
+                line: { color: '#9333ea', width: 2.3, dash: 'dot' }
+              });
+            }
+          }
+        } else if (state.activeChart === 'singles') {
+          titleText = 'Consumo de Solteros (N_S) en el Reactor Batch';
+          yAxisTitle = 'Solteros (personas)';
+
+          traces.push({
+            x: state.daysArr,
+            y: state.aepe.Ns,
+            name: 'N_S Modelo Base AEPE',
+            mode: 'lines',
+            line: { color: '#4f46e5', width: 2.8 }
+          });
+          traces.push({
+            x: state.stoch.days,
+            y: state.stoch.Ns,
+            name: 'N_S Simulación Aula (Actual)',
+            mode: 'lines',
+            line: { color: '#f43f5e', width: 2.5, shape: 'hv' }
+          });
+
+          if (state.advancedMode) {
+            traces.push({
+              x: state.daysArr,
+              y: state.rk4.Ns,
+              name: 'N_S EDOs Exactas (RK4)',
+              mode: 'lines',
+              line: { color: '#0d9488', width: 2.4, dash: 'dash' }
+            });
+            if (state.mc) {
+              traces.push({
+                x: state.daysArr,
+                y: state.mc.Ns,
+                name: `N_S Promedio MC (${state.mc.runs}x)`,
+                mode: 'lines',
+                line: { color: '#9333ea', width: 2.2, dash: 'dot' }
+              });
+            }
+          }
+        } else {
+          titleText = 'Conversión de Solteros X(t) = (N_S0 − N_S) / N_S0';
+          yAxisTitle = 'Conversión X (%)';
+
+          traces.push({
+            x: state.daysArr,
+            y: state.aepe.X,
+            name: 'X Modelo Base AEPE',
+            mode: 'lines',
+            line: { color: '#4f46e5', width: 2.8 }
+          });
+          traces.push({
+            x: state.stoch.days,
+            y: state.stoch.X,
+            name: 'X Simulación Aula (Actual)',
+            mode: 'lines',
+            line: { color: '#f43f5e', width: 2.5, shape: 'hv' }
+          });
+
+          if (state.advancedMode) {
+            traces.push({
+              x: state.daysArr,
+              y: state.rk4.X,
+              name: 'X EDOs Exactas (RK4)',
+              mode: 'lines',
+              line: { color: '#0d9488', width: 2.4, dash: 'dash' }
+            });
+            if (state.mc) {
+              traces.push({
+                x: state.daysArr,
+                y: state.mc.X,
+                name: `X Promedio MC (${state.mc.runs}x)`,
+                mode: 'lines',
+                line: { color: '#9333ea', width: 2.2, dash: 'dot' }
+              });
+            }
+          }
+        }
+
+        const xDtick = d.totalDays <= 90 ? 15 : (d.totalDays <= 240 ? 30 : 60);
+
+        const layout = {
+          paper_bgcolor: '#ffffff',
+          plot_bgcolor: '#f8fafc',
+          margin: { l: 58, r: 18, t: 38, b: 56 },
+          title: {
+            text: titleText,
+            font: { family: 'Inter, sans-serif', size: 13.5, color: '#0f172a' },
+            x: 0.01,
+            xanchor: 'left'
+          },
+          font: { family: 'JetBrains Mono, monospace', size: 11, color: '#334155' },
+          hovermode: 'x unified',
+          legend: {
+            orientation: 'h',
+            y: -0.22,
+            x: 0,
+            font: { size: 10.5, color: '#334155' }
+          },
+          xaxis: {
+            title: { text: 'Tiempo (días)', font: { size: 11.5, color: '#334155' } },
+            range: [0, d.totalDays],
+            dtick: xDtick,
+            showgrid: state.showMajorGrid,
+            gridcolor: '#cbd5e1',
+            gridwidth: 1,
+            zerolinecolor: '#94a3b8',
+            ticks: 'outside',
+            ticklen: 5,
+            tickcolor: '#64748b',
+            linecolor: '#94a3b8',
+            mirror: true,
+            minor: {
+              nticks: 4,
+              showgrid: state.showMinorGrid,
+              gridcolor: '#e2e8f0',
+              gridwidth: 1,
+              ticks: state.showMinorTicks ? 'outside' : '',
+              ticklen: 3,
+              tickcolor: '#94a3b8'
+            }
+          },
+          yaxis: {
+            title: { text: yAxisTitle, font: { size: 11.5, color: '#334155' } },
+            rangemode: 'tozero',
+            showgrid: state.showMajorGrid,
+            gridcolor: '#cbd5e1',
+            gridwidth: 1,
+            zerolinecolor: '#94a3b8',
+            ticks: 'outside',
+            ticklen: 5,
+            tickcolor: '#64748b',
+            linecolor: '#94a3b8',
+            mirror: true,
+            minor: {
+              nticks: 4,
+              showgrid: state.showMinorGrid,
+              gridcolor: '#e2e8f0',
+              gridwidth: 1,
+              ticks: state.showMinorTicks ? 'outside' : '',
+              ticklen: 3,
+              tickcolor: '#94a3b8'
+            }
+          },
+          shapes: [
+            {
+              type: 'line',
+              x0: state.currentDay,
+              x1: state.currentDay,
+              y0: 0,
+              y1: 1,
+              yref: 'paper',
+              line: { color: '#4f46e5', width: 1.5, dash: 'dot' }
+            }
+          ]
+        };
+
+        Plotly.react(chartDiv, traces, layout, {
+          responsive: true,
+          displaylogo: false,
+          modeBarButtonsToRemove: ['lasso2d', 'select2d']
+        });
+      }
+
+      // =========================================================================
+      // 8. ACTUALIZACIÓN DE INTERFAZ (KPIs, TABLAS, DIAGNÓSTICO AEPE Y CSV)
+      // =========================================================================
+      function updateUI(redrawChart = false) {
+        const d = getDerived();
+        const day = state.currentDay;
+        const T = d.totalDays;
+
+        // Barra lateral y barra superior del visor
+        document.getElementById('lbl-total-days').textContent = T;
+        document.getElementById('readout-V').textContent = `${d.V.toFixed(1)} m³`;
+        document.getElementById('readout-Cso').textContent = `${d.Cso.toFixed(3)} pers/m³`;
+        document.getElementById('readout-Kprime').textContent = `${d.Kprime.toFixed(4)} m³/(p·mes)`;
+        document.getElementById('readout-tau').textContent = Number.isFinite(d.tauMonths) ? `${d.tauMonths.toFixed(2)} mes` : '∞';
+        document.getElementById('readout-sel').textContent = `${(d.selectivity * 100).toFixed(1)}%`;
+        document.getElementById('height-note').classList.toggle('hidden', params.H <= 5);
+        document.getElementById('viewer-dims-badge').textContent = `L=${params.L.toFixed(1)}m × W=${params.W.toFixed(1)}m × H=${params.H.toFixed(1)}m · V=${d.V.toFixed(1)} m³`;
+
+        // KPIs en vivo
+        const nsNow = state.agents.filter(a => a.state === 'S').length;
+        const nlNow = state.ligues.length;
+        const npNow = state.couples.length;
+        const totalNow = nsNow + 2 * nlNow + 2 * npNow;
+
+        document.getElementById('kpi-day').textContent = `Día ${day} / ${T}`;
+        document.getElementById('kpi-month').textContent = `Mes ${(day / 30).toFixed(1)} · ${formatClock(state.simTime)}`;
+        document.getElementById('kpi-ns').textContent = nsNow;
+        document.getElementById('kpi-nl').textContent = nlNow;
+        document.getElementById('kpi-np').textContent = npNow;
+        document.getElementById('kpi-balance').textContent = `${totalNow} / ${d.totalPeople} pers.`;
+
+        // Ticker y contadores
+        document.getElementById('event-ticker').textContent = state.lastEventText;
+        document.getElementById('cnt-ligues').textContent = state.counts.ligues;
+        document.getElementById('cnt-breaks').textContent = state.counts.breaks;
+        document.getElementById('cnt-couples').textContent = state.counts.couples;
+
+        // Tabla resumen base (2 filas limpias)
+        document.getElementById('base-summary-sub').textContent = `Horizonte: ${params.months} meses (${T} días)`;
+        const stIdx = state.stoch.days.length - 1;
+        const stNs = state.stoch.Ns[stIdx];
+        const stNl = state.stoch.Nl[stIdx];
+        const stNp = state.stoch.Np[stIdx];
+        const stX  = state.stoch.X[stIdx];
+
+        document.getElementById('base-summary-tbody').innerHTML = `
+          <tr>
+            <td class="py-2 pr-3 font-sans font-semibold text-indigo-800">Modelo Base AEPE (t = ${params.months} meses)</td>
+            <td class="px-2 py-2 text-right font-semibold">${state.aepe.Ns[T].toFixed(2)}</td>
+            <td class="px-2 py-2 text-right text-slate-400">≈ 0</td>
+            <td class="px-2 py-2 text-right font-bold text-rose-600">${state.aepe.Np[T].toFixed(2)}</td>
+            <td class="px-2 py-2 text-right font-bold text-emerald-700">+${(state.aepe.Np[T] - params.Npo).toFixed(2)}</td>
+            <td class="pl-2 py-2 text-right">${state.aepe.X[T].toFixed(2)}%</td>
+          </tr>
+          <tr class="bg-rose-50/40">
+            <td class="py-2 pr-3 font-sans font-semibold text-rose-700">Corrida Actual Aula (Día ${day})</td>
+            <td class="px-2 py-2 text-right font-semibold">${stNs.toFixed(0)}</td>
+            <td class="px-2 py-2 text-right font-semibold text-amber-700">${stNl.toFixed(0)}</td>
+            <td class="px-2 py-2 text-right font-bold text-rose-600">${stNp.toFixed(0)}</td>
+            <td class="px-2 py-2 text-right font-bold text-emerald-700">+${(stNp - params.Npo).toFixed(0)}</td>
+            <td class="pl-2 py-2 text-right">${stX.toFixed(2)}%</td>
+          </tr>
+        `;
+
+        // Panel de Modo Avanzado
+        if (state.advancedMode) {
+          const tauRatio = Number.isFinite(d.tauMonths) ? (d.tauMonths / params.months) * 100 : 999;
+          const maxNl = Math.max(...state.rk4.Nl);
+          const holdPct = params.Nso > 0 ? ((2 * maxNl) / params.Nso) * 100 : 0;
+          const gapNp = state.aepe.Np[T] - state.rk4.Np[T];
+
+          document.getElementById('diag-tau-ratio').textContent = tauRatio > 500 ? '∞' : `${tauRatio.toFixed(1)}%`;
+          document.getElementById('diag-hold').textContent = `${holdPct.toFixed(1)}%`;
+          document.getElementById('diag-gap').textContent = `${gapNp >= 0 ? '+' : ''}${gapNp.toFixed(2)} parejas`;
+
+          const badge = document.getElementById('aepe-badge');
+          const expl = document.getElementById('diag-explanation');
+
+          if (tauRatio <= 20 && holdPct <= 10) {
+            badge.textContent = 'AEPE Válida';
+            badge.className = 'rounded-full border border-emerald-300 bg-emerald-100 px-3 py-0.5 font-mono text-[11px] font-bold text-emerald-800';
+            expl.innerHTML = `Con <span class="font-mono font-semibold">τ<sub>L*</sub>/t<sub>total</sub> = ${tauRatio.toFixed(1)}%</span> y <span class="font-mono font-semibold">${holdPct.toFixed(1)}%</span> de solteros retenidos en L*, la AEPE captura bien la tendencia. La diferencia de <span class="font-mono font-semibold">${gapNp.toFixed(2)} parejas</span> frente a RK4 y Monte Carlo corresponde al periodo de inducción al iniciar con <span class="font-mono">N<sub>L*</sub>(0) = 0</span>.`;
+          } else if (tauRatio <= 32 && holdPct <= 18) {
+            badge.textContent = 'Inducción Moderada';
+            badge.className = 'rounded-full border border-amber-300 bg-amber-100 px-3 py-0.5 font-mono text-[11px] font-bold text-amber-800';
+            expl.innerHTML = `El tiempo de vida del ligue (<span class="font-mono font-semibold">${tauRatio.toFixed(1)}%</span> del semestre) o la retención en L* (<span class="font-mono font-semibold">${holdPct.toFixed(1)}%</span>) ya desplazan visiblemente las EDOs exactas y Monte Carlo frente a la AEPE (brecha de <span class="font-mono font-semibold">${gapNp.toFixed(2)} parejas</span>).`;
+          } else {
+            badge.textContent = 'Ruptura de AEPE';
+            badge.className = 'rounded-full border border-rose-300 bg-rose-100 px-3 py-0.5 font-mono text-[11px] font-bold text-rose-800';
+            expl.innerHTML = `El intermediario L* dura demasiado frente al periodo de operación o retiene demasiados solteros (<span class="font-mono font-semibold">${holdPct.toFixed(1)}%</span>), violando <span class="font-mono">r<sub>L*</sub> ≈ 0</span>. En este régimen las EDOs exactas (RK4) y Monte Carlo son la referencia confiable.`;
+          }
+
+          // Advertencias específicas si C_S0 > 0.8 o H > 5 m
+          const warnBox = document.getElementById('diag-warnings');
+          let warnHtml = '';
+          if (d.Cso > 0.8) {
+            warnHtml += `
+              <div class="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-[11px] text-rose-900">
+                <strong class="font-bold">Alerta de alta densidad (C<sub>S0</sub> = ${d.Cso.toFixed(2)} &gt; 0.80 pers/m³):</strong> A concentraciones elevadas se acumulan muchos ligues simultáneos en L*, tensionando la estequiometría simplificada <span class="font-mono">N<sub>S</sub> = N<sub>S0</sub>(1 − X)</span>.
+              </div>`;
+          }
+          if (params.H > 5) {
+            warnHtml += `
+              <div class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+                <strong class="font-bold">Alerta geométrica (H = ${params.H.toFixed(1)} m &gt; 5.0 m):</strong> Aumentar la altura reduce <span class="font-mono">C<sub>S0</sub> = N<sub>S0</sub>/(L·W·H)</span> como un reactor volumétrico 3D, aunque las interacciones reales ocurran sobre el plano del piso 2D.
+              </div>`;
+          }
+          warnBox.innerHTML = warnHtml;
+
+          // Tabla comparativa completa de 4 modelos
+          document.getElementById('adv-table-note').textContent = `Evaluación al final del periodo: t = ${params.months} meses (Día ${T})`;
+          const advRow = (name, ns, nl, np, xPct, bal, rowClass = '') => {
+            const dnp = np - params.Npo;
+            return `
+              <tr class="${rowClass}">
+                <td class="px-3 py-2.5 font-sans font-semibold">${name}</td>
+                <td class="px-2.5 py-2.5 text-right">${ns.toFixed(2)}</td>
+                <td class="px-2.5 py-2.5 text-right">${nl === null ? '≈ 0' : nl.toFixed(2)}</td>
+                <td class="px-2.5 py-2.5 text-right font-bold text-rose-600">${np.toFixed(2)}</td>
+                <td class="px-2.5 py-2.5 text-right font-semibold text-emerald-700">${dnp >= 0 ? '+' : ''}${dnp.toFixed(2)}</td>
+                <td class="px-2.5 py-2.5 text-right">${xPct.toFixed(2)}%</td>
+                <td class="px-3 py-2.5 text-right font-semibold text-slate-600">${bal.toFixed(2)}</td>
+              </tr>
+            `;
+          };
+
+          const aepeBal = state.aepe.Ns[T] + 2 * state.aepe.Np[T];
+          const rk4Bal  = state.rk4.Ns[T] + 2 * state.rk4.Nl[T] + 2 * state.rk4.Np[T];
+          const curBal  = stNs + 2 * stNl + 2 * stNp;
+
+          let advHtml = '';
+          advHtml += advRow('Modelo Base AEPE (Analítico)', state.aepe.Ns[T], null, state.aepe.Np[T], state.aepe.X[T], aepeBal);
+          advHtml += advRow('EDOs Exactas (RK4 sin AEPE)', state.rk4.Ns[T], state.rk4.Nl[T], state.rk4.Np[T], state.rk4.X[T], rk4Bal, 'bg-teal-50/40');
+          advHtml += advRow(`Corrida Actual Aula (Día ${day})`, stNs, stNl, stNp, stX, curBal, 'bg-rose-50/30');
+          if (state.mc) {
+            const mcBal = state.mc.Ns[T] + 2 * state.mc.Nl[T] + 2 * state.mc.Np[T];
+            advHtml += advRow(
+              `Promedio Monte Carlo (${state.mc.runs}x, σ = ±${state.mc.stdNp[T].toFixed(2)})`,
+              state.mc.Ns[T],
+              state.mc.Nl[T],
+              state.mc.Np[T],
+              state.mc.X[T],
+              mcBal,
+              'bg-purple-50/40'
+            );
+          }
+          document.getElementById('advanced-tbody').innerHTML = advHtml;
+        }
+
+        if (redrawChart) {
+          renderPlotlyChart();
+        }
+      }
+
+      function updatePlayButtonUI() {
+        const btn = document.getElementById('btn-play');
+        const txt = document.getElementById('txt-play');
+        const icon = document.getElementById('icon-play');
+        if (state.running) {
+          txt.textContent = 'Pausar';
+          btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+          btn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+          icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+        } else {
+          txt.textContent = state.currentDay >= state.totalDays ? 'Reiniciar y Correr' : 'Iniciar';
+          btn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+          btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+          icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+        }
+      }
+
+      function showToast(msg, tone = 'info') {
+        const box = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        const cls = tone === 'success'
+          ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+          : 'border-indigo-300 bg-white text-slate-800';
+        el.className = `pointer-events-auto rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-lg transition-all ${cls}`;
+        el.textContent = msg;
+        box.appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = '0';
+          setTimeout(() => el.remove(), 280);
+        }, 2800);
+      }
+
+      function exportCSV() {
+        if (!state.mc) computeMonteCarlo(50);
+        const T = state.totalDays;
+        const rows = [
+          'Dia,Mes,NS_AEPE,NP_AEPE,NL_AEPE_ref,X_AEPE_pct,NS_EDO_RK4,NL_EDO_RK4,NP_EDO_RK4,X_EDO_pct,NS_Aula,NL_Aula,NP_Aula,X_Aula_pct,NS_MC50,NL_MC50,NP_MC50,Std_NP_MC50,X_MC50_pct'
+        ];
+
+        for (let day = 0; day <= T; day++) {
+          const hasStoch = day < state.stoch.days.length;
+          rows.push([
+            day,
+            (day / 30).toFixed(4),
+            state.aepe.Ns[day].toFixed(4),
+            state.aepe.Np[day].toFixed(4),
+            state.aepe.NlRef[day].toFixed(4),
+            state.aepe.X[day].toFixed(4),
+            state.rk4.Ns[day].toFixed(4),
+            state.rk4.Nl[day].toFixed(4),
+            state.rk4.Np[day].toFixed(4),
+            state.rk4.X[day].toFixed(4),
+            hasStoch ? state.stoch.Ns[day] : '',
+            hasStoch ? state.stoch.Nl[day] : '',
+            hasStoch ? state.stoch.Np[day] : '',
+            hasStoch ? state.stoch.X[day].toFixed(4) : '',
+            state.mc.Ns[day].toFixed(4),
+            state.mc.Nl[day].toFixed(4),
+            state.mc.Np[day].toFixed(4),
+            state.mc.stdNp[day].toFixed(4),
+            state.mc.X[day].toFixed(4)
+          ].join(','));
+        }
+
+        const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reactor_batch_social_${params.months}m_k1_${params.k1}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Archivo CSV exportado correctamente.', 'success');
+      }
+
+      // =========================================================================
+      // 9. BUCLE PRINCIPAL DE ANIMACIÓN (60 FPS)
+      // =========================================================================
+      let lastNow = performance.now();
+
+      function animate(now) {
+        const dtSec = Math.min(0.1, (now - lastNow) / 1000);
+        lastNow = now;
+        let dayAdvanced = false;
+
+        if (state.running) {
+          state.simTime += dtSec * state.speed;
+          if (state.simTime >= state.totalDays) {
+            state.simTime = state.totalDays;
+          }
+
+          while (state.currentDay < Math.floor(state.simTime) && state.currentDay < state.totalDays) {
+            state.currentDay++;
+            stepSimulationOneDay(state.currentDay);
+            dayAdvanced = true;
+          }
+
+          if (state.currentDay >= state.totalDays) {
+            state.running = false;
+            updatePlayButtonUI();
+            showToast(`Periodo concluido (${state.totalDays} días). Parejas finales en aula: ${state.couples.length}.`, 'success');
+          }
+        }
+
+        updatePhysics(dtSec);
+        renderClassroom(now);
+
+        document.getElementById('kpi-month').textContent = `Mes ${(state.currentDay / 30).toFixed(1)} · ${formatClock(state.simTime)}`;
+        if (dayAdvanced) {
+          updateUI(true);
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      // =========================================================================
+      // 10. EVENT LISTENERS E INTERACCIONES
+      // =========================================================================
+      document.getElementById('toggle-advanced').addEventListener('change', (e) => {
+        state.advancedMode = e.target.checked;
+        const advSection = document.getElementById('advanced-section');
+        const pill = document.getElementById('mode-pill');
+
+        if (state.advancedMode) {
+          if (!state.mc) computeMonteCarlo(50);
+          advSection.classList.remove('hidden');
+          pill.textContent = 'Vista Completa: Análisis Avanzado';
+          pill.className = 'rounded-full border border-teal-300 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800';
+          showToast('Modo Avanzado activado: EDOs Exactas (RK4) y Monte Carlo (50x) visibles.');
+        } else {
+          advSection.classList.add('hidden');
+          pill.textContent = 'Vista Base: Modelo AEPE';
+          pill.className = 'rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700';
+        }
+        updateUI(true);
+      });
+
+      function bindInputPair(key, rngId, numId, isInt = false) {
+        const rng = document.getElementById(rngId);
+        const num = document.getElementById(numId);
+
+        const apply = (raw) => {
+          let v = parseFloat(raw);
+          if (Number.isNaN(v)) return;
+          const min = parseFloat(num.min);
+          const max = parseFloat(num.max);
+          v = Math.max(min, Math.min(max, v));
+          if (isInt) v = Math.round(v);
+          params[key] = v;
+          rng.value = Math.min(parseFloat(rng.max), Math.max(parseFloat(rng.min), v));
+          num.value = v;
+          resetSimulation(true);
+        };
+
+        rng.addEventListener('input', (e) => apply(e.target.value));
+        num.addEventListener('change', (e) => apply(e.target.value));
+      }
+
+      bindInputPair('Nso',    'rng-nso',   'num-nso',   true);
+      bindInputPair('Npo',    'rng-npo',   'num-npo',   true);
+      bindInputPair('months', 'rng-meses', 'num-meses', true);
+      bindInputPair('L',      'rng-L',     'num-L',     false);
+      bindInputPair('W',      'rng-W',     'num-W',     false);
+      bindInputPair('H',      'rng-H',     'num-H',     false);
+      bindInputPair('k1',     'rng-k1',    'num-k1',    false);
+      bindInputPair('k2',     'rng-k2',    'num-k2',    false);
+      bindInputPair('k3',     'rng-k3',    'num-k3',    false);
+
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = PRESETS[btn.dataset.preset];
+          if (!p) return;
+
+          params.k1 = p.k1;
+          params.k2 = p.k2;
+          params.k3 = p.k3;
+
+          document.getElementById('rng-k1').value = p.k1;
+          document.getElementById('num-k1').value = p.k1;
+          document.getElementById('rng-k2').value = p.k2;
+          document.getElementById('num-k2').value = p.k2;
+          document.getElementById('rng-k3').value = p.k3;
+          document.getElementById('num-k3').value = p.k3;
+
+          document.querySelectorAll('.preset-btn').forEach(b => {
+            b.className = 'preset-btn min-w-0 rounded-xl border border-slate-300 bg-slate-50 px-1.5 py-2 text-center text-xs font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50/50';
+          });
+          btn.className = 'preset-btn min-w-0 rounded-xl border-2 border-indigo-600 bg-indigo-50 px-1.5 py-2 text-center text-xs font-bold text-indigo-800 shadow-sm transition';
+
+          resetSimulation(true);
+          showToast(`Escenario aplicado: ${p.label}`);
+        });
+      });
+
+      document.getElementById('btn-play').addEventListener('click', () => {
+        if (state.currentDay >= state.totalDays) {
+          resetSimulation(false);
+        }
+        state.running = !state.running;
+        updatePlayButtonUI();
+      });
+
+      document.getElementById('btn-step').addEventListener('click', () => {
+        state.running = false;
+        updatePlayButtonUI();
+        if (state.currentDay < state.totalDays) {
+          state.currentDay++;
+          state.simTime = state.currentDay;
+          stepSimulationOneDay(state.currentDay);
+          updateUI(true);
+        } else {
+          showToast('Fin del periodo alcanzado. Pulsa Reiniciar para correr otro lote.');
+        }
+      });
+
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        resetSimulation(false);
+        showToast('Nueva corrida aleatoria inicializada.');
+      });
+
+      document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.speed = parseFloat(btn.dataset.speed);
+          document.querySelectorAll('.speed-btn').forEach(b => {
+            b.className = 'speed-btn rounded-lg px-2 py-1 font-semibold text-slate-600 transition hover:text-slate-900';
+          });
+          btn.className = 'speed-btn rounded-lg bg-white px-2 py-1 font-bold text-indigo-700 shadow-sm transition';
+        });
+      });
+
+      document.getElementById('chk-daynight').addEventListener('change', (e) => {
+        state.dayNightEnabled = e.target.checked;
+      });
+
+      document.querySelectorAll('.chart-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          state.activeChart = tab.dataset.chart;
+          document.querySelectorAll('.chart-tab').forEach(t => {
+            t.className = 'chart-tab rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100';
+          });
+          tab.className = 'chart-tab rounded-xl border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition';
+          renderPlotlyChart();
+        });
+      });
+
+      document.getElementById('chk-major-grid').addEventListener('change', (e) => {
+        state.showMajorGrid = e.target.checked;
+        renderPlotlyChart();
+      });
+      document.getElementById('chk-minor-grid').addEventListener('change', (e) => {
+        state.showMinorGrid = e.target.checked;
+        renderPlotlyChart();
+      });
+      document.getElementById('chk-minor-ticks').addEventListener('change', (e) => {
+        state.showMinorTicks = e.target.checked;
+        renderPlotlyChart();
+      });
+
+      document.getElementById('btn-recalc-mc').addEventListener('click', () => {
+        computeMonteCarlo(50);
+        updateUI(true);
+        const T = state.totalDays;
+        showToast(`Monte Carlo (50 corridas): N_P final = ${state.mc.Np[T].toFixed(2)} ± ${state.mc.stdNp[T].toFixed(2)}`, 'success');
+      });
+
+      document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
+
+      window.addEventListener('resize', () => {
+        resizeDisplayCanvas();
+        const chartDiv = document.getElementById('plotly-chart');
+        if (chartDiv && typeof Plotly !== 'undefined') {
+          Plotly.Plots.resize(chartDiv);
+        }
+      });
+
+      window.addEventListener('load', () => {
+        resetSimulation(true);
+        requestAnimationFrame(animate);
+      });
+    })();
+  </script>
+</body>
+</html>
