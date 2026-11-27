@@ -156,6 +156,44 @@
           </div>
         </section>
 
+        <!-- 1B. Seguimiento Opcional de Individuos con Nombre ("por las risas") -->
+        <section class="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+          <div class="mb-2 flex items-center justify-between gap-2">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Seguimiento de Individuos</h2>
+            <span class="shrink-0 rounded-md bg-amber-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-700 border border-amber-200/80">Opcional</span>
+          </div>
+
+          <div class="space-y-2.5">
+            <!-- Individuo 1 (Insignia Dorada) -->
+            <div class="rounded-xl border border-amber-200/90 bg-amber-50/35 p-2">
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500 font-mono text-[10px] font-extrabold text-white shadow-sm">1</span>
+                <input id="input-track-1" type="text" maxlength="16" placeholder="Ej. Juan" class="min-w-0 flex-1 rounded-lg border border-amber-300/80 bg-white px-2 py-1 text-xs font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-400 focus:border-amber-500 focus:outline-none" />
+                <button id="btn-clear-track-1" title="Quitar seguimiento 1" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600">×</button>
+              </div>
+              <div id="status-track-1" class="mt-1.5 hidden text-[11px] leading-snug text-slate-700"></div>
+            </div>
+
+            <!-- Individuo 2 (Insignia Cian/Esmeralda) -->
+            <div class="rounded-xl border border-cyan-200/90 bg-cyan-50/35 p-2">
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-cyan-600 font-mono text-[10px] font-extrabold text-white shadow-sm">2</span>
+                <input id="input-track-2" type="text" maxlength="16" placeholder="Ej. Sofía" class="min-w-0 flex-1 rounded-lg border border-cyan-300/80 bg-white px-2 py-1 text-xs font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none" />
+                <button id="btn-clear-track-2" title="Quitar seguimiento 2" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-500 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600">×</button>
+              </div>
+              <div id="status-track-2" class="mt-1.5 hidden text-[11px] leading-snug text-slate-700"></div>
+            </div>
+
+            <button id="btn-assign-random" class="w-full rounded-xl border border-indigo-200 bg-indigo-50/80 px-3 py-1.5 text-xs font-semibold text-indigo-800 transition hover:bg-indigo-100 active:scale-[0.99]">
+              Asignar a solteros al azar
+            </button>
+
+            <p class="text-[11px] leading-snug text-slate-500">
+              También puedes hacer clic directo sobre cualquier personaje en el salón para seleccionarlo o nombrarlo.
+            </p>
+          </div>
+        </section>
+
         <!-- 2. Alimentación y Tiempo -->
         <section class="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
           <h2 class="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">1. Alimentación y Tiempo</h2>
@@ -332,7 +370,10 @@
           <!-- Franja de 5 KPIs en vivo (responsiva sin recortes en 1280px-1440px) -->
           <div class="grid grid-cols-2 gap-2 border-b border-slate-200 bg-slate-50/90 p-3 sm:grid-cols-3 xl:grid-cols-5">
             <div class="min-w-0 rounded-xl border border-slate-200 bg-white px-2.5 py-2">
-              <div class="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-500">Día / Mes</div>
+              <div class="flex items-center justify-between gap-1">
+                <span class="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-500">Día / Mes</span>
+                <span id="kpi-overtime-badge" class="hidden shrink-0 rounded border border-amber-300 bg-amber-100 px-1.5 py-0.5 font-mono text-[9px] font-extrabold text-amber-900">TIEMPO EXTRA</span>
+              </div>
               <div id="kpi-day" class="mt-0.5 truncate font-mono text-sm font-bold text-slate-900">Día 0 / 180</div>
               <div id="kpi-month" class="truncate font-mono text-[10px] text-slate-500">Mes 0.0 · 08:00</div>
             </div>
@@ -380,16 +421,41 @@
           </div>
 
           <!-- Ticker discreto del último evento (flex-wrap anti-recorte) -->
-          <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-slate-200 bg-slate-50 px-3.5 py-2 text-xs">
-            <div class="flex min-w-0 flex-1 items-center gap-2">
-              <span class="inline-flex h-2 w-2 shrink-0 rounded-full bg-indigo-500"></span>
-              <span class="shrink-0 font-semibold text-slate-600">Último evento:</span>
-              <span id="event-ticker" class="min-w-0 break-words font-medium text-slate-900">Día 0: Reactor batch cerrado e inicializado (38 solteros, 1 pareja).</span>
+          <div class="border-b border-slate-200 bg-slate-50 px-3.5 py-2 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
+              <div class="flex min-w-0 flex-1 items-center gap-2">
+                <span id="event-dot" class="inline-flex h-2 w-2 shrink-0 rounded-full bg-indigo-500"></span>
+                <span class="shrink-0 font-semibold text-slate-600">Último evento:</span>
+                <span id="event-ticker" class="min-w-0 break-words font-medium text-slate-900">Día 0: Reactor batch cerrado e inicializado (38 solteros, 1 pareja).</span>
+              </div>
+              <div class="flex shrink-0 flex-wrap items-center gap-2 font-mono text-[11px] text-slate-600">
+                <span class="rounded bg-amber-50 px-1.5 py-0.5 border border-amber-200/70">2S→L*: <strong id="cnt-ligues" class="text-amber-800">0</strong></span>
+                <span class="rounded bg-slate-100 px-1.5 py-0.5 border border-slate-200">L*→2S: <strong id="cnt-breaks" class="text-slate-800">0</strong></span>
+                <span class="rounded bg-rose-50 px-1.5 py-0.5 border border-rose-200/70">L*→P: <strong id="cnt-couples" class="text-rose-700">0</strong></span>
+                <button id="btn-toggle-history" class="rounded-lg border border-slate-300 bg-white px-2 py-0.5 font-sans text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100">
+                  Historial (0) ▾
+                </button>
+              </div>
             </div>
-            <div class="flex shrink-0 flex-wrap items-center gap-3 font-mono text-[11px] text-slate-600">
-              <span class="rounded bg-amber-50 px-1.5 py-0.5 border border-amber-200/70">2S→L*: <strong id="cnt-ligues" class="text-amber-800">0</strong></span>
-              <span class="rounded bg-slate-100 px-1.5 py-0.5 border border-slate-200">L*→2S: <strong id="cnt-breaks" class="text-slate-800">0</strong></span>
-              <span class="rounded bg-rose-50 px-1.5 py-0.5 border border-rose-200/70">L*→P: <strong id="cnt-couples" class="text-rose-700">0</strong></span>
+            <!-- Mini historial desplegable (últimos 4 eventos, destaca individuos con nombre) -->
+            <div id="event-history-panel" class="mt-2 hidden border-t border-slate-200/80 pt-2">
+              <ul id="event-history-list" class="space-y-1 text-[11px] text-slate-700"></ul>
+            </div>
+          </div>
+
+          <!-- Banner de Extensión al completar el periodo de diseño -->
+          <div id="overtime-banner" class="hidden flex-wrap items-center justify-between gap-2.5 border-b border-amber-200 bg-amber-50/90 px-3.5 py-2.5 text-xs">
+            <div class="flex min-w-0 items-center gap-2 text-amber-950">
+              <span class="inline-flex shrink-0 items-center rounded-md bg-amber-200/90 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-950">CORTE DE DISEÑO</span>
+              <span id="overtime-banner-text" class="min-w-0 font-medium">Periodo de diseño completado (Día 180). Instantánea oficial guardada; puedes extender la corrida para observar cómo sigue avanzando.</span>
+            </div>
+            <div class="flex shrink-0 flex-wrap items-center gap-2">
+              <button id="btn-extend-3m" class="rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 active:scale-95">
+                +3 meses (Extender)
+              </button>
+              <button id="btn-extend-inf" class="rounded-xl border border-amber-400 bg-white px-3 py-1.5 text-xs font-bold text-amber-900 shadow-sm transition hover:bg-amber-100 active:scale-95">
+                Seguir corriendo (∞)
+              </button>
             </div>
           </div>
 
@@ -422,6 +488,11 @@
               <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-700 select-none">
                 <input id="chk-daynight" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                 <span>Luz Día/Noche</span>
+              </label>
+
+              <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-700 select-none" title="Si está activo, la simulación continúa más allá del tiempo de diseño t">
+                <input id="chk-allow-overtime" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500" />
+                <span>Permitir tiempo extra (sin pausa en t)</span>
               </label>
             </div>
 
@@ -636,24 +707,43 @@
         running: false,
         speed: 2,               // días por segundo (1, 2, 5, 15, 30)
         dayNightEnabled: true,
-        simTime: 0,             // días continuos (0 .. totalDays)
+        allowOvertime: false,   // Permitir tiempo extra sin pausa al llegar a t_diseño
+        MAX_OVERTIME_DAYS: 1800,// Límite seguro (60 meses)
+        simTime: 0,             // días continuos (0 .. runLimitDays)
         currentDay: 0,          // entero discreto ya procesado
-        totalDays: 180,
+        designDays: 180,        // corte oficial del periodo de diseño (t * 30)
+        runLimitDays: 180,      // horizonte máximo actual de la corrida
+        totalDays: 180,         // alias mantenido para compatibilidad interna (= designDays)
+        computedMaxDay: 0,      // último día precalculado en AEPE y RK4
+        rk4LastState: null,     // { ns, nl, np } para extender RK4 incrementalmente
+        designSnapshot: null,   // instantánea congelada al corte de diseño (t = designDays)
+        reactionFinishedNotified: false,
         activeChart: 'pairs',
         showMajorGrid: true,
         showMinorGrid: true,
         showMinorTicks: true,
 
-        // Arreglos diarios (0 .. totalDays)
+        // Arreglos diarios (0 .. computedMaxDay)
         daysArr: [],
         aepe: { Ns: [], NlRef: [], Np: [], X: [] },
         rk4:  { Ns: [], Nl: [], Np: [], X: [] },
         stoch: { days: [], Ns: [], Nl: [], Np: [], X: [] },
-        mc: null, // { runs, Ns, Nl, Np, stdNp, X }
+        mc: null, // { runs, maxDay, runStates, Ns, Nl, Np, stdNp, X }
 
-        // Contadores de eventos de la corrida actual
+        // Contadores de eventos e historial corto
         counts: { ligues: 0, breaks: 0, couples: 0 },
         lastEventText: '',
+        lastEventNamed: false,
+        eventLog: [],
+        historyOpen: false,
+
+        // Seguimiento opcional de hasta 2 individuos (slot 0 = dorado, slot 1 = cian)
+        tracked: [
+          { agentId: null, name: '' },
+          { agentId: null, name: '' }
+        ],
+        hoveredAgentId: null,
+        renderMetrics: null,
 
         // Entidades del aula Pixel Art 2.5D estilo GBA Minish Cap
         agents: [],
@@ -685,17 +775,28 @@
       }
 
       // Motor 1 (AEPE Analítico) + Motor 2 (EDOs Exactas por RK4, 10 sub-pasos/día)
-      function computeDeterministicModels() {
+      function computeDeterministicModels(targetMaxDay = null) {
         const d = getDerived();
+        state.designDays = d.totalDays;
         state.totalDays = d.totalDays;
+        const horizon = Math.max(d.totalDays, targetMaxDay || d.totalDays);
 
-        const daysArr = [];
-        const aepeNs = [], aepeNlRef = [], aepeNp = [], aepeX = [];
-        const rk4Ns = [], rk4Nl = [], rk4Np = [], rk4X = [];
+        state.daysArr = [];
+        state.aepe = { Ns: [], NlRef: [], Np: [], X: [] };
+        state.rk4  = { Ns: [], Nl: [], Np: [], X: [] };
+        state.rk4LastState = { ns: params.Nso, nl: 0, np: params.Npo };
+        state.computedMaxDay = -1;
 
-        let ns = params.Nso;
-        let nl = 0;
-        let np = params.Npo;
+        extendDeterministicModelsTo(horizon);
+      }
+
+      // Extiende AEPE y RK4 incrementalmente desde computedMaxDay+1 hasta targetDay (O(Δdías))
+      function extendDeterministicModelsTo(targetDay) {
+        const clampedTarget = Math.min(state.MAX_OVERTIME_DAYS, Math.max(state.designDays, Math.ceil(targetDay)));
+        if (state.computedMaxDay >= clampedTarget) return;
+
+        const d = getDerived();
+        let { ns, nl, np } = state.rk4LastState || { ns: params.Nso, nl: 0, np: params.Npo };
 
         const subSteps = 10;
         const dt = 1 / 300; // (1/30 mes) / 10
@@ -708,34 +809,10 @@
           return [dNs, dNl, dNp];
         };
 
-        for (let day = 0; day <= d.totalDays; day++) {
-          daysArr.push(day);
-          const tm = day / 30;
+        const startDay = state.computedMaxDay + 1;
 
-          // 1) Analítico AEPE
-          const term = d.Kprime * d.Cso * tm;
-          const xA = params.Nso > 0 ? term / (1 + term) : 0;
-          const nsA = params.Nso * (1 - xA);
-          const npA = params.Npo + 0.5 * params.Nso * xA;
-          const nlRef = d.kSumRaw > 0 ? (params.k1 / (2 * d.kSum)) * ((nsA * nsA) / d.V) : 0;
-
-          aepeNs.push(nsA);
-          aepeNlRef.push(nlRef);
-          aepeNp.push(npA);
-          aepeX.push(xA * 100);
-
-          // 2) EDOs exactas RK4
-          const nsClamped = Math.max(0, ns);
-          const nlClamped = Math.max(0, nl);
-          const npClamped = Math.max(0, np);
-          const xR = params.Nso > 0 ? ((params.Nso - nsClamped) / params.Nso) * 100 : 0;
-
-          rk4Ns.push(nsClamped);
-          rk4Nl.push(nlClamped);
-          rk4Np.push(npClamped);
-          rk4X.push(xR);
-
-          if (day < d.totalDays) {
+        for (let day = startDay; day <= clampedTarget; day++) {
+          if (day > 0) {
             for (let step = 0; step < subSteps; step++) {
               const [k1s, k1l, k1p] = derivs(ns, nl);
               const [k2s, k2l, k2p] = derivs(ns + 0.5 * dt * k1s, nl + 0.5 * dt * k1l);
@@ -747,11 +824,36 @@
               np = Math.max(0, np + (dt / 6) * (k1p + 2 * k2p + 2 * k3p + k4p));
             }
           }
+
+          state.daysArr.push(day);
+          const tm = day / 30;
+
+          // 1) Analítico AEPE
+          const term = d.Kprime * d.Cso * tm;
+          const xA = params.Nso > 0 ? term / (1 + term) : 0;
+          const nsA = params.Nso * (1 - xA);
+          const npA = params.Npo + 0.5 * params.Nso * xA;
+          const nlRef = d.kSumRaw > 0 ? (params.k1 / (2 * d.kSum)) * ((nsA * nsA) / d.V) : 0;
+
+          state.aepe.Ns.push(nsA);
+          state.aepe.NlRef.push(nlRef);
+          state.aepe.Np.push(npA);
+          state.aepe.X.push(xA * 100);
+
+          // 2) EDOs exactas RK4
+          const nsClamped = Math.max(0, ns);
+          const nlClamped = Math.max(0, nl);
+          const npClamped = Math.max(0, np);
+          const xR = params.Nso > 0 ? ((params.Nso - nsClamped) / params.Nso) * 100 : 0;
+
+          state.rk4.Ns.push(nsClamped);
+          state.rk4.Nl.push(nlClamped);
+          state.rk4.Np.push(npClamped);
+          state.rk4.X.push(xR);
         }
 
-        state.daysArr = daysArr;
-        state.aepe = { Ns: aepeNs, NlRef: aepeNlRef, Np: aepeNp, X: aepeX };
-        state.rk4  = { Ns: rk4Ns,  Nl: rk4Nl,       Np: rk4Np,  X: rk4X  };
+        state.rk4LastState = { ns, nl, np };
+        state.computedMaxDay = clampedTarget;
       }
 
       // Motor 3: Algoritmo exacto de Gillespie SSA agrupado por día (dt = 1/30 mes)
@@ -794,58 +896,68 @@
             events.push('formalize');
           }
         }
-
         return { ns, nl, np, events };
       }
 
-      // Monte Carlo: 50 corridas exactas de Gillespie SSA
-      function computeMonteCarlo(numRuns = 50) {
+      // Monte Carlo: 50 corridas exactas de Gillespie SSA (extensible en Tiempo Extra)
+      function computeMonteCarlo(numRuns = 50, targetMaxDay = null) {
         const d = getDerived();
-        const T = d.totalDays;
+        const T = Math.min(state.MAX_OVERTIME_DAYS, Math.max(d.totalDays, targetMaxDay || state.currentDay || d.totalDays));
 
-        const sumNs  = new Float64Array(T + 1);
-        const sumNl  = new Float64Array(T + 1);
-        const sumNp  = new Float64Array(T + 1);
-        const sumNp2 = new Float64Array(T + 1);
-        const sumX   = new Float64Array(T + 1);
-
+        const runStates = [];
         for (let r = 0; r < numRuns; r++) {
-          let ns = params.Nso;
-          let nl = 0;
-          let np = params.Npo;
+          runStates.push({ ns: params.Nso, nl: 0, np: params.Npo });
+        }
 
-          sumNs[0]  += ns;
-          sumNl[0]  += nl;
-          sumNp[0]  += np;
-          sumNp2[0] += np * np;
-          sumX[0]   += 0;
+        state.mc = {
+          runs: numRuns,
+          maxDay: 0,
+          runStates,
+          Ns: [params.Nso],
+          Nl: [0],
+          Np: [params.Npo],
+          stdNp: [0],
+          X: [0]
+        };
 
-          for (let day = 1; day <= T; day++) {
-            const res = advanceGillespieDay(ns, nl, np, d.V);
-            ns = res.ns;
-            nl = res.nl;
-            np = res.np;
+        extendMonteCarloTo(T);
+      }
 
-            sumNs[day]  += ns;
-            sumNl[day]  += nl;
-            sumNp[day]  += np;
-            sumNp2[day] += np * np;
-            sumX[day]   += params.Nso > 0 ? ((params.Nso - ns) / params.Nso) * 100 : 0;
+      function extendMonteCarloTo(targetDay) {
+        if (!state.mc) return;
+        const clampedTarget = Math.min(state.MAX_OVERTIME_DAYS, Math.max(state.designDays, Math.ceil(targetDay)));
+        if (state.mc.maxDay >= clampedTarget) return;
+
+        const d = getDerived();
+        const numRuns = state.mc.runs;
+        const startDay = state.mc.maxDay + 1;
+
+        for (let day = startDay; day <= clampedTarget; day++) {
+          let sNs = 0, sNl = 0, sNp = 0, sNp2 = 0, sX = 0;
+          for (let r = 0; r < numRuns; r++) {
+            const st = state.mc.runStates[r];
+            const res = advanceGillespieDay(st.ns, st.nl, st.np, d.V);
+            st.ns = res.ns;
+            st.nl = res.nl;
+            st.np = res.np;
+
+            sNs  += st.ns;
+            sNl  += st.nl;
+            sNp  += st.np;
+            sNp2 += st.np * st.np;
+            sX   += params.Nso > 0 ? ((params.Nso - st.ns) / params.Nso) * 100 : 0;
           }
+
+          const mNp = sNp / numRuns;
+          const variance = Math.max(0, (sNp2 / numRuns) - mNp * mNp);
+          state.mc.Ns.push(sNs / numRuns);
+          state.mc.Nl.push(sNl / numRuns);
+          state.mc.Np.push(mNp);
+          state.mc.stdNp.push(Math.sqrt(variance));
+          state.mc.X.push(sX / numRuns);
         }
 
-        const meanNs = [], meanNl = [], meanNp = [], stdNp = [], meanX = [];
-        for (let day = 0; day <= T; day++) {
-          const mNp = sumNp[day] / numRuns;
-          const variance = Math.max(0, (sumNp2[day] / numRuns) - mNp * mNp);
-          meanNs.push(sumNs[day] / numRuns);
-          meanNl.push(sumNl[day] / numRuns);
-          meanNp.push(mNp);
-          stdNp.push(Math.sqrt(variance));
-          meanX.push(sumX[day] / numRuns);
-        }
-
-        state.mc = { runs: numRuns, Ns: meanNs, Nl: meanNl, Np: meanNp, stdNp, X: meanX };
+        state.mc.maxDay = clampedTarget;
       }
 
       // =========================================================================
@@ -1230,8 +1342,63 @@
           hairIdx: Math.floor(Math.random() * HAIR_PALETTES.length),
           hairStyle: Math.floor(Math.random() * 5),
           tunicIdx: Math.floor(Math.random() * SINGLE_TUNICS.length),
-          pairId: null
+          pairId: null,
+          stats: { ligues: 0, breaks: 0, couples: 0 }
         };
+      }
+
+      // Helpers de Seguimiento de Individuos (Opcional)
+      function getTrackedSlotByAgentId(agentId) {
+        if (agentId == null) return -1;
+        for (let i = 0; i < 2; i++) {
+          if (state.tracked[i].agentId === agentId) return i;
+        }
+        return -1;
+      }
+
+      function getTrackedLabel(slotIdx) {
+        const raw = (state.tracked[slotIdx]?.name || '').trim();
+        return raw || `Sujeto ${slotIdx + 1}`;
+      }
+
+      function getAgentById(id) {
+        if (id == null) return null;
+        return state.agents.find(a => a.id === id) || null;
+      }
+
+      function getPartnerOfAgent(ag) {
+        if (!ag || ag.pairId == null) return null;
+        return state.agents.find(other => other.id !== ag.id && other.pairId === ag.pairId) || null;
+      }
+
+      function pushEventLog(text, isNamed = false, kind = 'info') {
+        state.lastEventText = text;
+        state.lastEventNamed = isNamed;
+        state.eventLog.unshift({ text, isNamed, kind });
+        if (state.eventLog.length > 4) state.eventLog.pop();
+      }
+
+      function assignTrackedToRandomSingle(slotIdx, preferredName = null) {
+        const takenIds = new Set(state.tracked.map(t => t.agentId).filter(id => id != null));
+        const availableSingles = state.agents.filter(a => a.state === 'S' && !takenIds.has(a.id));
+        const pool = availableSingles.length > 0
+          ? availableSingles
+          : state.agents.filter(a => !takenIds.has(a.id));
+
+        if (pool.length === 0) return false;
+        const chosen = pick(pool);
+        state.tracked[slotIdx].agentId = chosen.id;
+        if (preferredName !== null) {
+          state.tracked[slotIdx].name = preferredName;
+        }
+        return true;
+      }
+
+      function syncTrackedInputsFromState() {
+        const in1 = document.getElementById('input-track-1');
+        const in2 = document.getElementById('input-track-2');
+        if (in1 && document.activeElement !== in1) in1.value = state.tracked[0].name;
+        if (in2 && document.activeElement !== in2) in2.value = state.tracked[1].name;
       }
 
       function generateDesks() {
@@ -1305,9 +1472,24 @@
           const my = Math.min(params.W - 0.50, Math.max(0.80, 0.5 * (a.y + b.y)));
 
           state.ligues.push({ id: pairId, a, b, x: mx, y: my, phase: Math.random() * Math.PI * 2 });
-          spawnParticle('sparkle', mx, my);
+          a.stats.ligues++;
+          b.stats.ligues++;
+
+          const sA = getTrackedSlotByAgentId(a.id);
+          const sB = getTrackedSlotByAgentId(b.id);
+          spawnParticle(sA !== -1 && sB !== -1 ? 'named_sparkle' : 'sparkle', mx, my);
           state.counts.ligues++;
-          state.lastEventText = `Día ${dayNum}: ¡Nuevo ligue formado! (2S → L*)`;
+
+          if (sA !== -1 && sB !== -1) {
+            const n1 = getTrackedLabel(Math.min(sA, sB));
+            const n2 = getTrackedLabel(Math.max(sA, sB));
+            pushEventLog(`Día ${dayNum}: ¡${n1} y ${n2} están ligando! (2S → L*)`, true, 'ligue');
+          } else if (sA !== -1 || sB !== -1) {
+            const n = getTrackedLabel(sA !== -1 ? sA : sB);
+            pushEventLog(`Día ${dayNum}: ¡${n} inició un ligue! (2S → L*)`, true, 'ligue');
+          } else {
+            pushEventLog(`Día ${dayNum}: ¡Nuevo ligue formado! (2S → L*)`, false, 'ligue');
+          }
         } else if (evType === 'breakup') {
           if (state.ligues.length === 0) return;
           const idx = Math.floor(Math.random() * state.ligues.length);
@@ -1316,6 +1498,8 @@
           lig.b.state = 'S';
           lig.a.pairId = null;
           lig.b.pairId = null;
+          lig.a.stats.breaks++;
+          lig.b.stats.breaks++;
 
           const pA = randomFloorPos();
           const pB = randomFloorPos();
@@ -1324,13 +1508,27 @@
 
           spawnParticle('broken_heart', lig.x, lig.y);
           state.counts.breaks++;
-          state.lastEventText = `Día ${dayNum}: Ligue disuelto, regresan a solteros (L* → 2S)`;
+
+          const sA = getTrackedSlotByAgentId(lig.a.id);
+          const sB = getTrackedSlotByAgentId(lig.b.id);
+          if (sA !== -1 && sB !== -1) {
+            const n1 = getTrackedLabel(Math.min(sA, sB));
+            const n2 = getTrackedLabel(Math.max(sA, sB));
+            pushEventLog(`Día ${dayNum}: Se cayó el ligue entre ${n1} y ${n2}... regresan a solteros (L* → 2S)`, true, 'breakup');
+          } else if (sA !== -1 || sB !== -1) {
+            const n = getTrackedLabel(sA !== -1 ? sA : sB);
+            pushEventLog(`Día ${dayNum}: A ${n} se le cayó el ligue... regresó a solteros (L* → 2S)`, true, 'breakup');
+          } else {
+            pushEventLog(`Día ${dayNum}: Ligue disuelto, regresan a solteros (L* → 2S)`, false, 'breakup');
+          }
         } else if (evType === 'formalize') {
           if (state.ligues.length === 0) return;
           const idx = Math.floor(Math.random() * state.ligues.length);
           const lig = state.ligues.splice(idx, 1)[0];
           lig.a.state = 'P';
           lig.b.state = 'P';
+          lig.a.stats.couples++;
+          lig.b.stats.couples++;
 
           const target = randomFloorPos(0.80, 0.85, 0.50);
           state.couples.push({
@@ -1345,10 +1543,37 @@
             pauseTimer: 0.65
           });
 
-          spawnParticle('heart_burst', lig.x, lig.y);
+          const sA = getTrackedSlotByAgentId(lig.a.id);
+          const sB = getTrackedSlotByAgentId(lig.b.id);
+          spawnParticle(sA !== -1 && sB !== -1 ? 'named_heart_burst' : 'heart_burst', lig.x, lig.y);
           state.counts.couples++;
-          state.lastEventText = `Día ${dayNum}: ¡Ligue formalizado a pareja! (L* → P)`;
+
+          if (sA !== -1 && sB !== -1) {
+            const n1 = getTrackedLabel(Math.min(sA, sB));
+            const n2 = getTrackedLabel(Math.max(sA, sB));
+            pushEventLog(`Día ${dayNum}: ¡${n1} y ${n2} ya son pareja oficial! (L* → P)`, true, 'formalize');
+          } else if (sA !== -1 || sB !== -1) {
+            const n = getTrackedLabel(sA !== -1 ? sA : sB);
+            pushEventLog(`Día ${dayNum}: ¡${n} formalizó relación! Producto estable formado (L* → P)`, true, 'formalize');
+          } else {
+            pushEventLog(`Día ${dayNum}: ¡Ligue formalizado a pareja! (L* → P)`, false, 'formalize');
+          }
         }
+      }
+
+      function captureDesignSnapshot() {
+        const nsNow = state.agents.filter(a => a.state === 'S').length;
+        const nlNow = state.ligues.length;
+        const npNow = state.couples.length;
+        const xNow = params.Nso > 0 ? ((params.Nso - nsNow) / params.Nso) * 100 : 0;
+        state.designSnapshot = {
+          day: state.designDays,
+          Ns: nsNow,
+          Nl: nlNow,
+          Np: npNow,
+          X: xNow,
+          counts: { ...state.counts }
+        };
       }
 
       function stepSimulationOneDay(dayNum) {
@@ -1372,16 +1597,41 @@
         state.stoch.Nl.push(nlNow);
         state.stoch.Np.push(npNow);
         state.stoch.X.push(xNow);
+
+        // Congelar instantánea oficial exactamente al corte del periodo de diseño
+        if (dayNum === state.designDays && !state.designSnapshot) {
+          captureDesignSnapshot();
+        }
+
+        // Extender modelos deterministas (y MC si Modo Avanzado está activo) en bloques eficientes de 30 días
+        if (dayNum > state.computedMaxDay) {
+          const nextHorizon = Math.min(state.MAX_OVERTIME_DAYS, dayNum + 30);
+          extendDeterministicModelsTo(nextHorizon);
+          if (state.advancedMode && state.mc) {
+            extendMonteCarloTo(nextHorizon);
+          }
+        }
+
+        // Aviso amigable una sola vez en Tiempo Extra si ya no hay solteros suficientes ni ligues activos
+        if (dayNum > state.designDays && !state.reactionFinishedNotified && nsNow < 2 && nlNow === 0) {
+          state.reactionFinishedNotified = true;
+          showToast('¡Conversión límite alcanzada! Ya no quedan pares de solteros ni ligues activos.', 'success');
+        }
       }
 
       function resetSimulation(recalcAllModels = false) {
         state.running = false;
-        updatePlayButtonUI();
+
+        // Recordar si el usuario tenía nombres asignados para reasignarlos en la nueva corrida
+        const hadTracked = state.tracked.map(t => ({
+          active: t.agentId !== null || (t.name || '').trim().length > 0,
+          name: (t.name || '').trim()
+        }));
 
         if (recalcAllModels || state.daysArr.length === 0) {
           computeDeterministicModels();
           if (state.advancedMode) {
-            computeMonteCarlo(50);
+            computeMonteCarlo(50, state.designDays);
           } else {
             state.mc = null;
           }
@@ -1389,11 +1639,16 @@
 
         state.simTime = 0;
         state.currentDay = 0;
+        state.runLimitDays = state.allowOvertime ? state.MAX_OVERTIME_DAYS : state.designDays;
+        state.designSnapshot = null;
+        state.reactionFinishedNotified = false;
         state.counts = { ligues: 0, breaks: 0, couples: 0 };
+        state.eventLog = [];
         state.agents = [];
         state.ligues = [];
         state.couples = [];
         state.particles = [];
+        state.hoveredAgentId = null;
         state.nextPairId = 1;
 
         generateDesks();
@@ -1428,6 +1683,18 @@
           });
         }
 
+        // Reasignar los nombres opcionales previos a solteros nuevos de esta corrida
+        state.tracked = [
+          { agentId: null, name: hadTracked[0].name },
+          { agentId: null, name: hadTracked[1].name }
+        ];
+        for (let i = 0; i < 2; i++) {
+          if (hadTracked[i].active && hadTracked[i].name.length > 0) {
+            assignTrackedToRandomSingle(i, hadTracked[i].name);
+          }
+        }
+        syncTrackedInputsFromState();
+
         state.stoch = {
           days: [0],
           Ns: [params.Nso],
@@ -1437,6 +1704,8 @@
         };
 
         state.lastEventText = `Día 0: Reactor batch cerrado e inicializado (${params.Nso} solteros, ${params.Npo} pareja${params.Npo === 1 ? '' : 's'}).`;
+        state.lastEventNamed = false;
+        updatePlayButtonUI();
         updateUI(true);
       }
 
@@ -2298,6 +2567,22 @@
             draw: () => {
               const sx = originX + ag.x * pxPerM;
               const sy = floorTopY + ag.y * pxPerM;
+              const slot = getTrackedSlotByAgentId(ag.id);
+              const isHover = state.hoveredAgentId === ag.id;
+
+              // Anillo sutil bajo los pies si está seleccionado o bajo el cursor
+              if (slot !== -1 || isHover) {
+                const ringCol = slot === 0
+                  ? '#f59e0b'
+                  : (slot === 1 ? '#06b6d4' : '#fff3c4');
+                const rx = Math.round(sx);
+                const ry = Math.round(sy);
+                px(c, rx - 6, ry - 1, 12, 1, ringCol);
+                px(c, rx - 6, ry + 2, 12, 1, ringCol);
+                px(c, rx - 7, ry, 2, 2, ringCol);
+                px(c, rx + 5, ry, 2, 2, ringCol);
+              }
+
               const phase = Math.floor(ag.walkPhase) % 4;
               const sprite = getChibiSprite(ag, ag.state, ag.dir, phase);
               c.drawImage(sprite, Math.round(sx - 8), Math.round(sy - 20));
@@ -2308,68 +2593,54 @@
         drawables.sort((a, b) => a.y - b.y);
         for (const item of drawables) item.draw();
 
-        // --- K. INDICADORES FLOTANTES GBA PARA LIGUES (L*) Y PAREJAS (P) ---
+        // --- K. ÍCONOS FLOTANTES SOBRE LIGUES (L*) Y PAREJAS (P) ---
         for (const lig of state.ligues) {
-          const sx = Math.round(originX + lig.x * pxPerM);
-          const bobY = Math.round(Math.sin(tSec * 5 + lig.phase) * 1.6);
-          const sy = Math.round(floorTopY + lig.y * pxPerM - 25 + bobY);
-
-          // Globo pixel art crema con contorno ciruela
-          px(c, sx - 8, sy - 6, 16, 10, PAL.outlinePlum);
-          px(c, sx - 7, sy - 5, 14, 8, PAL.creamHi);
-          // Colita del globo
-          px(c, sx - 1, sy + 4, 3, 2, PAL.outlinePlum);
-          px(c, sx, sy + 4, 1, 1, PAL.creamHi);
-
-          const mode = Math.floor(tSec * 2.2 + lig.id) % 2;
-          if (mode === 0) {
-            drawHalfHeart(c, sx, sy - 1, Math.floor(tSec * 4.4) % 2 === 0);
-          } else {
-            // Puntos suspensivos + chispas doradas
-            const dotStep = Math.floor(tSec * 5) % 3;
-            px(c, sx - 4, sy - 1 - (dotStep === 0 ? 1 : 0), 2, 2, PAL.goldShd);
-            px(c, sx - 1, sy - 1 - (dotStep === 1 ? 1 : 0), 2, 2, PAL.goldMid);
-            px(c, sx + 2, sy - 1 - (dotStep === 2 ? 1 : 0), 2, 2, PAL.crimsonMid);
+          const lx = Math.round(originX + lig.x * pxPerM);
+          const ly = Math.round(floorTopY + lig.y * pxPerM - 24 + Math.sin(lig.phase) * 1.5);
+          // Globo estilo RPG con medio corazón y chispas parpadeantes
+          px(c, lx - 6, ly - 5, 12, 9, PAL.outlinePlum);
+          px(c, lx - 5, ly - 4, 10, 7, PAL.creamHi);
+          px(c, lx - 1, ly + 4, 2, 1, PAL.outlinePlum);
+          const pulse = Math.sin(lig.phase * 1.6) > 0;
+          drawHalfHeart(c, lx, ly - 1, pulse);
+          if (pulse) {
+            px(c, lx - 8, ly - 4, 1, 1, PAL.goldHi);
+            px(c, lx + 7, ly - 3, 1, 1, PAL.goldHi);
           }
         }
 
         for (const cp of state.couples) {
-          const sx = Math.round(originX + cp.x * pxPerM);
-          const bobY = Math.round(Math.sin(tSec * 3.4 + cp.id) * 1.5);
-          const sy = Math.round(floorTopY + cp.y * pxPerM - 25 + bobY);
-          drawHeartContainer(c, sx, sy);
+          const cx = Math.round(originX + cp.x * pxPerM);
+          const cy = Math.round(floorTopY + cp.y * pxPerM - 25 + Math.sin(tSec * 3.2 + cp.id) * 1.4);
+          drawHeartContainer(c, cx, cy);
         }
 
-        // --- L. PARTÍCULAS (RUPTURA k2: CORAZÓN QUEBRADO + POLVO; FORMALIZACIÓN k3: DESTELLOS) ---
+        // --- L. PARTÍCULAS ANIMADAS (CHISPAS, CORAZÓN ROTO, LOGRO PAREJA) ---
         for (const pt of state.particles) {
-          const prog = pt.age / pt.maxAge;
+          const prog = Math.min(1, pt.age / pt.maxAge);
+          const alpha = Math.max(0, 1 - prog);
           const sx = Math.round(originX + pt.x * pxPerM);
-          const sy = Math.round(floorTopY + pt.y * pxPerM - 22 - prog * 14);
+          const sy = Math.round(floorTopY + pt.y * pxPerM - 20 - prog * 14);
           c.save();
-          c.globalAlpha = Math.max(0, 1 - prog);
-
+          c.globalAlpha = alpha;
           if (pt.type === 'broken_heart') {
-            drawBrokenHeart(c, sx, sy, Math.round(prog * 3));
-            // Nubecitas de polvo estilo Minish Cap al separarse
-            const puffR = Math.round(4 + prog * 9);
-            px(c, sx - puffR, sy + 14, 3, 3, '#e6dac5');
-            px(c, sx + puffR - 2, sy + 14, 3, 3, '#e6dac5');
-            px(c, sx - puffR + 1, sy + 13, 1, 1, '#fff3c4');
-            px(c, sx + puffR - 1, sy + 13, 1, 1, '#fff3c4');
-          } else if (pt.type === 'heart_burst') {
+            drawBrokenHeart(c, sx, sy, Math.round(prog * 5));
+            px(c, sx - 5, sy + 4, 1, 1, '#94a3b8');
+            px(c, sx + 5, sy + 3, 1, 1, '#94a3b8');
+          } else if (pt.type === 'heart_burst' || pt.type === 'named_heart_burst') {
             drawHeartContainer(c, sx, sy - 2);
-            const r = Math.round(4 + prog * 13);
-            // Estrellitas doradas de logro Zelda
+            const r = Math.round(4 + prog * (pt.type === 'named_heart_burst' ? 18 : 13));
+            // Estrellitas doradas/cian de logro Zelda
             px(c, sx - r, sy, 2, 2, PAL.goldHi);
-            px(c, sx + r - 1, sy, 2, 2, PAL.goldHi);
+            px(c, sx + r - 1, sy, 2, 2, pt.type === 'named_heart_burst' ? '#5eead4' : PAL.goldHi);
             px(c, sx, sy - r, 2, 2, PAL.creamHi);
             px(c, sx - Math.round(r * 0.7), sy - Math.round(r * 0.7), 1, 1, '#ffffff');
             px(c, sx + Math.round(r * 0.7), sy - Math.round(r * 0.7), 1, 1, '#ffffff');
           } else {
-            // Chispas doradas al iniciar ligue
-            const r = Math.round(3 + prog * 10);
+            // Chispas doradas (y cian si ambos nombrados) al iniciar ligue
+            const r = Math.round(3 + prog * (pt.type === 'named_sparkle' ? 15 : 10));
             px(c, sx - r, sy, 2, 2, PAL.goldHi);
-            px(c, sx + r, sy, 2, 2, PAL.goldHi);
+            px(c, sx + r, sy, 2, 2, pt.type === 'named_sparkle' ? '#22d3ee' : PAL.goldHi);
             px(c, sx, sy - r, 2, 2, PAL.creamHi);
           }
           c.restore();
@@ -2395,16 +2666,147 @@
         const drawY = Math.round((displayCanvas.height - drawH) / 2);
 
         displayCtx.drawImage(vCanvas, 0, 0, vw, vh, drawX, drawY, drawW, drawH);
+
+        // Guardar métricas de proyección para hit-testing de clics y etiquetas RPG nítidas
+        state.renderMetrics = { originX, floorTopY, pxPerM, drawX, drawY, scale, vw, vh };
+
+        // --- O. CAPA NÍTIDA DE ETIQUETAS RPG PARA INDIVIDUOS SEGUIDOS (OPCIONAL) ---
+        drawTrackedNameOverlays(displayCtx, tSec);
+      }
+
+      function drawTrackedNameOverlays(ctx, tSec) {
+        const m = state.renderMetrics;
+        if (!m) return;
+
+        const ag0 = getAgentById(state.tracked[0].agentId);
+        const ag1 = getAgentById(state.tracked[1].agentId);
+        if (!ag0 && !ag1) return;
+
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const toScreen = (mx, my, vOffsetY) => ({
+          x: m.drawX + (m.originX + mx * m.pxPerM) * m.scale,
+          y: m.drawY + (m.floorTopY + my * m.pxPerM + vOffsetY) * m.scale
+        });
+
+        const drawTag = (text, sx, sy, borderCol, bgCol, textCol, isMerged = false) => {
+          ctx.save();
+          const fontSize = Math.round(11 * dpr);
+          ctx.font = `700 ${fontSize}px "JetBrains Mono", monospace`;
+          const textW = ctx.measureText(text).width;
+          const padX = Math.round(7 * dpr);
+          const boxH = Math.round(19 * dpr);
+          const boxW = Math.round(textW + padX * 2);
+          const bx = Math.round(Math.max(6, Math.min(displayCanvas.width - boxW - 6, sx - boxW / 2)));
+          const by = Math.round(Math.max(6, sy - boxH - 6 * dpr));
+
+          // Sombra pixelada suave
+          ctx.fillStyle = 'rgba(20, 12, 24, 0.55)';
+          ctx.fillRect(bx + 2 * dpr, by + 2 * dpr, boxW, boxH);
+
+          // Fondo y borde estilo cuadro de diálogo RPG
+          ctx.fillStyle = bgCol;
+          ctx.fillRect(bx, by, boxW, boxH);
+
+          ctx.lineWidth = Math.max(1.5, 1.8 * dpr);
+          if (isMerged) {
+            const grad = ctx.createLinearGradient(bx, by, bx + boxW, by);
+            grad.addColorStop(0, '#f59e0b');
+            grad.addColorStop(0.5, '#f43f5e');
+            grad.addColorStop(1, '#06b6d4');
+            ctx.strokeStyle = grad;
+          } else {
+            ctx.strokeStyle = borderCol;
+          }
+          ctx.strokeRect(bx + 0.5, by + 0.5, boxW - 1, boxH - 1);
+
+          // Flechita apuntando a la cabeza del personaje
+          const tipX = Math.max(bx + 8 * dpr, Math.min(bx + boxW - 8 * dpr, sx));
+          const triSize = 4.5 * dpr;
+          ctx.fillStyle = isMerged ? '#f43f5e' : borderCol;
+          ctx.beginPath();
+          ctx.moveTo(tipX - triSize, by + boxH);
+          ctx.lineTo(tipX + triSize, by + boxH);
+          ctx.lineTo(tipX, by + boxH + triSize);
+          ctx.closePath();
+          ctx.fill();
+
+          // Texto nítido
+          ctx.fillStyle = textCol;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, bx + boxW / 2, by + boxH / 2 + 0.5 * dpr);
+
+          // Destellos animados si ambos nombrados están juntos
+          if (isMerged) {
+            const pulse = 0.55 + 0.45 * Math.sin(tSec * 7);
+            ctx.fillStyle = `rgba(255, 243, 196, ${pulse.toFixed(2)})`;
+            const sp = Math.round(3 * dpr);
+            ctx.fillRect(bx - sp - 2, by - 1, sp, sp);
+            ctx.fillRect(bx + boxW + 2, by + boxH - sp, sp, sp);
+          }
+          ctx.restore();
+          return { bx, by, boxW, boxH };
+        };
+
+        // Caso especial: los DOS individuos con nombre están juntos en el mismo ligue o pareja
+        if (ag0 && ag1 && ag0.pairId !== null && ag0.pairId === ag1.pairId) {
+          const midX = 0.5 * (ag0.x + ag1.x);
+          const midY = 0.5 * (ag0.y + ag1.y);
+          const pos = toScreen(midX, midY, -34);
+          const label = `${getTrackedLabel(0)} ♥ ${getTrackedLabel(1)}`;
+          drawTag(label, pos.x, pos.y, '#f43f5e', 'rgba(35, 20, 38, 0.94)', '#fff7ed', true);
+          return;
+        }
+
+        const tags = [];
+        if (ag0) {
+          const vOff = ag0.state === 'S' ? -22 : -33;
+          const pos = toScreen(ag0.x, ag0.y, vOff);
+          tags.push({ slot: 0, text: `★ ${getTrackedLabel(0)}`, x: pos.x, y: pos.y, border: '#f59e0b', bg: 'rgba(38, 26, 18, 0.92)', fg: '#fef3c7' });
+        }
+        if (ag1) {
+          const vOff = ag1.state === 'S' ? -22 : -33;
+          const pos = toScreen(ag1.x, ag1.y, vOff);
+          tags.push({ slot: 1, text: `◆ ${getTrackedLabel(1)}`, x: pos.x, y: pos.y, border: '#06b6d4', bg: 'rgba(14, 34, 44, 0.92)', fg: '#cffafe' });
+        }
+
+        // Evitar solapamiento si ambos caminan muy cerca sin ser pareja
+        if (tags.length === 2 && Math.abs(tags[0].x - tags[1].x) < 75 * dpr && Math.abs(tags[0].y - tags[1].y) < 24 * dpr) {
+          tags[1].y -= 24 * dpr;
+        }
+
+        for (const t of tags) {
+          drawTag(t.text, t.x, t.y, t.border, t.bg, t.fg, false);
+        }
       }
 
       // =========================================================================
-      // 7. GRÁFICA INTERACTIVA PLOTLY.JS (VISTA BASE + MODO AVANZADO)
+      // 7. GRÁFICA INTERACTIVA PLOTLY.JS (VISTA BASE + MODO AVANZADO + TIEMPO EXTRA)
       // =========================================================================
       function renderPlotlyChart() {
         const d = getDerived();
         const chartDiv = document.getElementById('plotly-chart');
         if (!chartDiv || typeof Plotly === 'undefined') return;
 
+        const plotMaxDay = Math.max(state.designDays, state.currentDay);
+        if (plotMaxDay > state.computedMaxDay) {
+          extendDeterministicModelsTo(plotMaxDay);
+        }
+        if (state.advancedMode && state.mc && plotMaxDay > state.mc.maxDay) {
+          extendMonteCarloTo(plotMaxDay);
+        }
+
+        const sliceLen = plotMaxDay + 1;
+        const xDays = state.daysArr.slice(0, sliceLen);
+        const aepeNs = state.aepe.Ns.slice(0, sliceLen);
+        const aepeNp = state.aepe.Np.slice(0, sliceLen);
+        const aepeX  = state.aepe.X.slice(0, sliceLen);
+        const rk4Ns  = state.rk4.Ns.slice(0, sliceLen);
+        const rk4Nl  = state.rk4.Nl.slice(0, sliceLen);
+        const rk4Np  = state.rk4.Np.slice(0, sliceLen);
+        const rk4X   = state.rk4.X.slice(0, sliceLen);
+
+        const isOvertime = state.currentDay > state.designDays;
         const traces = [];
         let titleText = '';
         let yAxisTitle = '';
@@ -2416,10 +2818,12 @@
           yAxisTitle = 'Número de Parejas / Ligues';
 
           if (state.advancedMode && state.mc) {
-            const upper = state.mc.Np.map((m, i) => m + state.mc.stdNp[i]);
-            const lower = state.mc.Np.map((m, i) => Math.max(params.Npo, m - state.mc.stdNp[i]));
+            const mcNp = state.mc.Np.slice(0, sliceLen);
+            const mcStd = state.mc.stdNp.slice(0, sliceLen);
+            const upper = mcNp.map((m, i) => m + mcStd[i]);
+            const lower = mcNp.map((m, i) => Math.max(params.Npo, m - mcStd[i]));
             traces.push({
-              x: [...state.daysArr, ...state.daysArr.slice().reverse()],
+              x: [...xDays, ...xDays.slice().reverse()],
               y: [...upper, ...lower.slice().reverse()],
               fill: 'toself',
               fillcolor: 'rgba(147, 51, 234, 0.12)',
@@ -2431,8 +2835,8 @@
           }
 
           traces.push({
-            x: state.daysArr,
-            y: state.aepe.Np,
+            x: xDays,
+            y: aepeNp,
             name: 'N_P Modelo Base AEPE',
             mode: 'lines',
             line: { color: '#4f46e5', width: 2.8 }
@@ -2457,23 +2861,23 @@
 
           if (state.advancedMode) {
             traces.push({
-              x: state.daysArr,
-              y: state.rk4.Np,
+              x: xDays,
+              y: rk4Np,
               name: 'N_P EDOs Exactas (RK4)',
               mode: 'lines',
               line: { color: '#0d9488', width: 2.5, dash: 'dash' }
             });
             traces.push({
-              x: state.daysArr,
-              y: state.rk4.Nl,
+              x: xDays,
+              y: rk4Nl,
               name: 'N_L* EDOs Exactas (RK4)',
               mode: 'lines',
               line: { color: '#f59e0b', width: 1.8, dash: 'dot' }
             });
             if (state.mc) {
               traces.push({
-                x: state.daysArr,
-                y: state.mc.Np,
+                x: xDays,
+                y: state.mc.Np.slice(0, sliceLen),
                 name: `N_P Promedio MC (${state.mc.runs}x)`,
                 mode: 'lines',
                 line: { color: '#9333ea', width: 2.3, dash: 'dot' }
@@ -2485,8 +2889,8 @@
           yAxisTitle = 'Solteros (personas)';
 
           traces.push({
-            x: state.daysArr,
-            y: state.aepe.Ns,
+            x: xDays,
+            y: aepeNs,
             name: 'N_S Modelo Base AEPE',
             mode: 'lines',
             line: { color: '#4f46e5', width: 2.8 }
@@ -2501,16 +2905,16 @@
 
           if (state.advancedMode) {
             traces.push({
-              x: state.daysArr,
-              y: state.rk4.Ns,
+              x: xDays,
+              y: rk4Ns,
               name: 'N_S EDOs Exactas (RK4)',
               mode: 'lines',
               line: { color: '#0d9488', width: 2.4, dash: 'dash' }
             });
             if (state.mc) {
               traces.push({
-                x: state.daysArr,
-                y: state.mc.Ns,
+                x: xDays,
+                y: state.mc.Ns.slice(0, sliceLen),
                 name: `N_S Promedio MC (${state.mc.runs}x)`,
                 mode: 'lines',
                 line: { color: '#9333ea', width: 2.2, dash: 'dot' }
@@ -2522,8 +2926,8 @@
           yAxisTitle = 'Conversión X (%)';
 
           traces.push({
-            x: state.daysArr,
-            y: state.aepe.X,
+            x: xDays,
+            y: aepeX,
             name: 'X Modelo Base AEPE',
             mode: 'lines',
             line: { color: '#4f46e5', width: 2.8 }
@@ -2538,16 +2942,16 @@
 
           if (state.advancedMode) {
             traces.push({
-              x: state.daysArr,
-              y: state.rk4.X,
+              x: xDays,
+              y: rk4X,
               name: 'X EDOs Exactas (RK4)',
               mode: 'lines',
               line: { color: '#0d9488', width: 2.4, dash: 'dash' }
             });
             if (state.mc) {
               traces.push({
-                x: state.daysArr,
-                y: state.mc.X,
+                x: xDays,
+                y: state.mc.X.slice(0, sliceLen),
                 name: `X Promedio MC (${state.mc.runs}x)`,
                 mode: 'lines',
                 line: { color: '#9333ea', width: 2.2, dash: 'dot' }
@@ -2556,14 +2960,58 @@
           }
         }
 
-        const xDtick = d.totalDays <= 90 ? 15 : (d.totalDays <= 240 ? 30 : 60);
+        const xDtick = plotMaxDay <= 90 ? 15
+          : (plotMaxDay <= 240 ? 30
+          : (plotMaxDay <= 540 ? 60
+          : (plotMaxDay <= 1080 ? 120 : 180)));
+
+        // Línea vertical actual + línea fija de corte de diseño cuando estamos en Tiempo Extra
+        const shapes = [
+          {
+            type: 'line',
+            x0: state.currentDay,
+            x1: state.currentDay,
+            y0: 0,
+            y1: 1,
+            yref: 'paper',
+            line: { color: isOvertime ? '#d97706' : '#4f46e5', width: 1.5, dash: 'dot' }
+          }
+        ];
+
+        const annotations = [];
+        if (isOvertime) {
+          shapes.push({
+            type: 'line',
+            x0: state.designDays,
+            x1: state.designDays,
+            y0: 0,
+            y1: 1,
+            yref: 'paper',
+            line: { color: '#b45309', width: 2, dash: 'dash' }
+          });
+          annotations.push({
+            x: state.designDays,
+            y: 0.99,
+            yref: 'paper',
+            xanchor: 'left',
+            yanchor: 'top',
+            xshift: 5,
+            text: `Fin periodo base (${params.months} m)`,
+            showarrow: false,
+            bgcolor: 'rgba(254, 243, 199, 0.92)',
+            bordercolor: '#d97706',
+            borderwidth: 1,
+            borderpad: 3,
+            font: { family: 'Inter, sans-serif', size: 10.5, color: '#92400e' }
+          });
+        }
 
         const layout = {
           paper_bgcolor: '#ffffff',
           plot_bgcolor: '#f8fafc',
           margin: { l: 58, r: 18, t: 38, b: 56 },
           title: {
-            text: titleText,
+            text: isOvertime ? `${titleText} [Tiempo Extra]` : titleText,
             font: { family: 'Inter, sans-serif', size: 13.5, color: '#0f172a' },
             x: 0.01,
             xanchor: 'left'
@@ -2578,7 +3026,7 @@
           },
           xaxis: {
             title: { text: 'Tiempo (días)', font: { size: 11.5, color: '#334155' } },
-            range: [0, d.totalDays],
+            range: [0, plotMaxDay],
             dtick: xDtick,
             showgrid: state.showMajorGrid,
             gridcolor: '#cbd5e1',
@@ -2621,17 +3069,8 @@
               tickcolor: '#94a3b8'
             }
           },
-          shapes: [
-            {
-              type: 'line',
-              x0: state.currentDay,
-              x1: state.currentDay,
-              y0: 0,
-              y1: 1,
-              yref: 'paper',
-              line: { color: '#4f46e5', width: 1.5, dash: 'dot' }
-            }
-          ]
+          shapes,
+          annotations
         };
 
         Plotly.react(chartDiv, traces, layout, {
@@ -2642,12 +3081,68 @@
       }
 
       // =========================================================================
-      // 8. ACTUALIZACIÓN DE INTERFAZ (KPIs, TABLAS, DIAGNÓSTICO AEPE Y CSV)
+      // 8. ACTUALIZACIÓN DE INTERFAZ (KPIs, INDIVIDUOS, TIEMPO EXTRA, TABLAS, CSV)
       // =========================================================================
+      function updateTrackedStatusPanels() {
+        for (let i = 0; i < 2; i++) {
+          const box = document.getElementById(`status-track-${i + 1}`);
+          if (!box) continue;
+          const ag = getAgentById(state.tracked[i].agentId);
+          if (!ag) {
+            box.classList.add('hidden');
+            box.innerHTML = '';
+            continue;
+          }
+
+          const partner = getPartnerOfAgent(ag);
+          const partnerSlot = partner ? getTrackedSlotByAgentId(partner.id) : -1;
+          const partnerTxt = partnerSlot !== -1 ? ` con <strong>${getTrackedLabel(partnerSlot)}</strong>` : '';
+
+          let stateBadge = '';
+          if (ag.state === 'S') {
+            stateBadge = `<span class="font-semibold text-indigo-700">Soltero (S)</span>`;
+          } else if (ag.state === 'L') {
+            stateBadge = `<span class="font-semibold text-amber-700">En ligue (L*)${partnerTxt}</span>`;
+          } else {
+            stateBadge = `<span class="font-semibold text-rose-600">En pareja (P)${partnerTxt}</span>`;
+          }
+
+          box.classList.remove('hidden');
+          box.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-1">
+              <span>${stateBadge}</span>
+              <span class="font-mono text-[10px] text-slate-500">L:${ag.stats.ligues} · R:${ag.stats.breaks}</span>
+            </div>
+          `;
+        }
+      }
+
+      function updateEventHistoryUI() {
+        const btn = document.getElementById('btn-toggle-history');
+        const panel = document.getElementById('event-history-panel');
+        const list = document.getElementById('event-history-list');
+        if (!btn || !panel || !list) return;
+
+        btn.textContent = `Historial (${state.eventLog.length}) ${state.historyOpen ? '▴' : '▾'}`;
+        panel.classList.toggle('hidden', !state.historyOpen);
+
+        if (state.eventLog.length === 0) {
+          list.innerHTML = '<li class="text-slate-400 italic">Aún no ocurren eventos estocásticos en esta corrida.</li>';
+        } else {
+          list.innerHTML = state.eventLog.map(ev => `
+            <li class="flex items-start gap-2 rounded-lg px-2 py-1 ${ev.isNamed ? 'bg-amber-50/90 border border-amber-200/80 font-semibold text-amber-950' : 'bg-white border border-slate-200/70 text-slate-700'}">
+              <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${ev.isNamed ? 'bg-amber-500' : (ev.kind === 'formalize' ? 'bg-rose-500' : 'bg-slate-400')}"></span>
+              <span class="min-w-0 break-words">${ev.text}</span>
+            </li>
+          `).join('');
+        }
+      }
+
       function updateUI(redrawChart = false) {
         const d = getDerived();
         const day = state.currentDay;
-        const T = d.totalDays;
+        const T = state.designDays;
+        const isOvertime = day > T;
 
         // Barra lateral y barra superior del visor
         document.getElementById('lbl-total-days').textContent = T;
@@ -2665,50 +3160,122 @@
         const npNow = state.couples.length;
         const totalNow = nsNow + 2 * nlNow + 2 * npNow;
 
-        document.getElementById('kpi-day').textContent = `Día ${day} / ${T}`;
-        document.getElementById('kpi-month').textContent = `Mes ${(day / 30).toFixed(1)} · ${formatClock(state.simTime)}`;
+        const otBadge = document.getElementById('kpi-overtime-badge');
+        otBadge.classList.toggle('hidden', !isOvertime);
+
+        if (isOvertime) {
+          document.getElementById('kpi-day').textContent = `Día ${day} (Corte: ${T})`;
+          document.getElementById('kpi-month').textContent = `Mes ${(day / 30).toFixed(1)} · +${day - T}d extra · ${formatClock(state.simTime)}`;
+        } else {
+          document.getElementById('kpi-day').textContent = `Día ${day} / ${T}`;
+          document.getElementById('kpi-month').textContent = `Mes ${(day / 30).toFixed(1)} · ${formatClock(state.simTime)}`;
+        }
         document.getElementById('kpi-ns').textContent = nsNow;
         document.getElementById('kpi-nl').textContent = nlNow;
         document.getElementById('kpi-np').textContent = npNow;
         document.getElementById('kpi-balance').textContent = `${totalNow} / ${d.totalPeople} pers.`;
 
-        // Ticker y contadores
-        document.getElementById('event-ticker').textContent = state.lastEventText;
+        // Banner de Extensión (visible al pausar en el corte de diseño o al llegar al límite extendido)
+        const banner = document.getElementById('overtime-banner');
+        const bannerText = document.getElementById('overtime-banner-text');
+        const showBanner = !state.running && day >= T && day < state.MAX_OVERTIME_DAYS;
+        banner.classList.toggle('hidden', !showBanner);
+        banner.classList.toggle('flex', showBanner);
+        if (showBanner) {
+          bannerText.textContent = day === T
+            ? `Periodo de diseño completado (Día ${T}). Instantánea oficial guardada; extiende la corrida para observar cómo sigue avanzando.`
+            : `Extensión pausada en Día ${day} (+${day - T} días extra sobre el corte de Día ${T}). Puedes seguir extendiendo.`;
+        }
+
+        // Ticker, contadores, historial y estados de individuos nombrados
+        const tickerEl = document.getElementById('event-ticker');
+        tickerEl.textContent = state.lastEventText;
+        tickerEl.className = state.lastEventNamed
+          ? 'min-w-0 break-words font-bold text-amber-900'
+          : 'min-w-0 break-words font-medium text-slate-900';
+        document.getElementById('event-dot').className = state.lastEventNamed
+          ? 'inline-flex h-2 w-2 shrink-0 rounded-full bg-amber-500'
+          : 'inline-flex h-2 w-2 shrink-0 rounded-full bg-indigo-500';
         document.getElementById('cnt-ligues').textContent = state.counts.ligues;
         document.getElementById('cnt-breaks').textContent = state.counts.breaks;
         document.getElementById('cnt-couples').textContent = state.counts.couples;
+        updateEventHistoryUI();
+        updateTrackedStatusPanels();
 
-        // Tabla resumen base (2 filas limpias)
-        document.getElementById('base-summary-sub').textContent = `Horizonte: ${params.months} meses (${T} días)`;
+        // Asegurar dominio precalculado
+        const evalDay = Math.max(T, day);
+        if (evalDay > state.computedMaxDay) extendDeterministicModelsTo(evalDay);
+        if (state.advancedMode && state.mc && evalDay > state.mc.maxDay) extendMonteCarloTo(evalDay);
+
+        // Tabla resumen base (muestra Corte de Diseño y, si aplica, filas de Tiempo Extra)
+        document.getElementById('base-summary-sub').textContent = isOvertime
+          ? `Corte base: ${params.months} m (Día ${T}) · Actual: Día ${day} (+${day - T}d extra)`
+          : `Horizonte: ${params.months} meses (${T} días)`;
+
         const stIdx = state.stoch.days.length - 1;
         const stNs = state.stoch.Ns[stIdx];
         const stNl = state.stoch.Nl[stIdx];
         const stNp = state.stoch.Np[stIdx];
         const stX  = state.stoch.X[stIdx];
 
-        document.getElementById('base-summary-tbody').innerHTML = `
+        const snap = state.designSnapshot;
+        let baseRowsHtml = `
           <tr>
-            <td class="py-2 pr-3 font-sans font-semibold text-indigo-800">Modelo Base AEPE (t = ${params.months} meses)</td>
+            <td class="py-2 pr-3 font-sans font-semibold text-indigo-800">Modelo Base AEPE (Corte t = ${params.months} m)</td>
             <td class="px-2 py-2 text-right font-semibold">${state.aepe.Ns[T].toFixed(2)}</td>
             <td class="px-2 py-2 text-right text-slate-400">≈ 0</td>
             <td class="px-2 py-2 text-right font-bold text-rose-600">${state.aepe.Np[T].toFixed(2)}</td>
             <td class="px-2 py-2 text-right font-bold text-emerald-700">+${(state.aepe.Np[T] - params.Npo).toFixed(2)}</td>
             <td class="pl-2 py-2 text-right">${state.aepe.X[T].toFixed(2)}%</td>
           </tr>
-          <tr class="bg-rose-50/40">
-            <td class="py-2 pr-3 font-sans font-semibold text-rose-700">Corrida Actual Aula (Día ${day})</td>
-            <td class="px-2 py-2 text-right font-semibold">${stNs.toFixed(0)}</td>
-            <td class="px-2 py-2 text-right font-semibold text-amber-700">${stNl.toFixed(0)}</td>
-            <td class="px-2 py-2 text-right font-bold text-rose-600">${stNp.toFixed(0)}</td>
-            <td class="px-2 py-2 text-right font-bold text-emerald-700">+${(stNp - params.Npo).toFixed(0)}</td>
-            <td class="pl-2 py-2 text-right">${stX.toFixed(2)}%</td>
-          </tr>
         `;
+
+        if (isOvertime && snap) {
+          baseRowsHtml += `
+            <tr class="bg-rose-50/35">
+              <td class="py-2 pr-3 font-sans font-semibold text-rose-700">Aula en Corte de Diseño (Día ${T})</td>
+              <td class="px-2 py-2 text-right font-semibold">${snap.Ns.toFixed(0)}</td>
+              <td class="px-2 py-2 text-right font-semibold text-amber-700">${snap.Nl.toFixed(0)}</td>
+              <td class="px-2 py-2 text-right font-bold text-rose-600">${snap.Np.toFixed(0)}</td>
+              <td class="px-2 py-2 text-right font-bold text-emerald-700">+${(snap.Np - params.Npo).toFixed(0)}</td>
+              <td class="pl-2 py-2 text-right">${snap.X.toFixed(2)}%</td>
+            </tr>
+            <tr class="bg-amber-50/50">
+              <td class="py-2 pr-3 font-sans font-semibold text-indigo-900">AEPE en Tiempo Extra (Día ${day})</td>
+              <td class="px-2 py-2 text-right font-semibold">${state.aepe.Ns[day].toFixed(2)}</td>
+              <td class="px-2 py-2 text-right text-slate-400">≈ 0</td>
+              <td class="px-2 py-2 text-right font-bold text-rose-600">${state.aepe.Np[day].toFixed(2)}</td>
+              <td class="px-2 py-2 text-right font-bold text-emerald-700">+${(state.aepe.Np[day] - params.Npo).toFixed(2)}</td>
+              <td class="pl-2 py-2 text-right">${state.aepe.X[day].toFixed(2)}%</td>
+            </tr>
+            <tr class="bg-amber-100/55">
+              <td class="py-2 pr-3 font-sans font-bold text-amber-950">Corrida Actual — Tiempo Extra (Día ${day})</td>
+              <td class="px-2 py-2 text-right font-semibold">${stNs.toFixed(0)}</td>
+              <td class="px-2 py-2 text-right font-semibold text-amber-700">${stNl.toFixed(0)}</td>
+              <td class="px-2 py-2 text-right font-bold text-rose-600">${stNp.toFixed(0)}</td>
+              <td class="px-2 py-2 text-right font-bold text-emerald-700">+${(stNp - params.Npo).toFixed(0)}</td>
+              <td class="pl-2 py-2 text-right">${stX.toFixed(2)}%</td>
+            </tr>
+          `;
+        } else {
+          baseRowsHtml += `
+            <tr class="bg-rose-50/40">
+              <td class="py-2 pr-3 font-sans font-semibold text-rose-700">Corrida Actual Aula (Día ${day})</td>
+              <td class="px-2 py-2 text-right font-semibold">${stNs.toFixed(0)}</td>
+              <td class="px-2 py-2 text-right font-semibold text-amber-700">${stNl.toFixed(0)}</td>
+              <td class="px-2 py-2 text-right font-bold text-rose-600">${stNp.toFixed(0)}</td>
+              <td class="px-2 py-2 text-right font-bold text-emerald-700">+${(stNp - params.Npo).toFixed(0)}</td>
+              <td class="pl-2 py-2 text-right">${stX.toFixed(2)}%</td>
+            </tr>
+          `;
+        }
+        document.getElementById('base-summary-tbody').innerHTML = baseRowsHtml;
 
         // Panel de Modo Avanzado
         if (state.advancedMode) {
           const tauRatio = Number.isFinite(d.tauMonths) ? (d.tauMonths / params.months) * 100 : 999;
-          const maxNl = Math.max(...state.rk4.Nl);
+          const rk4NlDesign = state.rk4.Nl.slice(0, T + 1);
+          const maxNl = Math.max(...rk4NlDesign);
           const holdPct = params.Nso > 0 ? ((2 * maxNl) / params.Nso) * 100 : 0;
           const gapNp = state.aepe.Np[T] - state.rk4.Np[T];
 
@@ -2750,8 +3317,11 @@
           }
           warnBox.innerHTML = warnHtml;
 
-          // Tabla comparativa completa de 4 modelos
-          document.getElementById('adv-table-note').textContent = `Evaluación al final del periodo: t = ${params.months} meses (Día ${T})`;
+          // Tabla comparativa completa de 4 modelos (Corte de Diseño + sección Tiempo Extra si aplica)
+          document.getElementById('adv-table-note').textContent = isOvertime
+            ? `Corte de diseño: t = ${params.months} m (Día ${T}) + Estado en Tiempo Extra (Día ${day})`
+            : `Evaluación al final del periodo: t = ${params.months} meses (Día ${T})`;
+
           const advRow = (name, ns, nl, np, xPct, bal, rowClass = '') => {
             const dnp = np - params.Npo;
             return `
@@ -2769,16 +3339,20 @@
 
           const aepeBal = state.aepe.Ns[T] + 2 * state.aepe.Np[T];
           const rk4Bal  = state.rk4.Ns[T] + 2 * state.rk4.Nl[T] + 2 * state.rk4.Np[T];
-          const curBal  = stNs + 2 * stNl + 2 * stNp;
+          const cutNs = snap ? snap.Ns : stNs;
+          const cutNl = snap ? snap.Nl : stNl;
+          const cutNp = snap ? snap.Np : stNp;
+          const cutX  = snap ? snap.X  : stX;
+          const cutBal = cutNs + 2 * cutNl + 2 * cutNp;
 
           let advHtml = '';
-          advHtml += advRow('Modelo Base AEPE (Analítico)', state.aepe.Ns[T], null, state.aepe.Np[T], state.aepe.X[T], aepeBal);
-          advHtml += advRow('EDOs Exactas (RK4 sin AEPE)', state.rk4.Ns[T], state.rk4.Nl[T], state.rk4.Np[T], state.rk4.X[T], rk4Bal, 'bg-teal-50/40');
-          advHtml += advRow(`Corrida Actual Aula (Día ${day})`, stNs, stNl, stNp, stX, curBal, 'bg-rose-50/30');
+          advHtml += advRow(`Modelo Base AEPE (Corte Día ${T})`, state.aepe.Ns[T], null, state.aepe.Np[T], state.aepe.X[T], aepeBal);
+          advHtml += advRow(`EDOs Exactas RK4 (Corte Día ${T})`, state.rk4.Ns[T], state.rk4.Nl[T], state.rk4.Np[T], state.rk4.X[T], rk4Bal, 'bg-teal-50/40');
+          advHtml += advRow(snap ? `Corrida Aula (Corte Día ${T})` : `Corrida Actual Aula (Día ${day})`, cutNs, cutNl, cutNp, cutX, cutBal, 'bg-rose-50/30');
           if (state.mc) {
             const mcBal = state.mc.Ns[T] + 2 * state.mc.Nl[T] + 2 * state.mc.Np[T];
             advHtml += advRow(
-              `Promedio Monte Carlo (${state.mc.runs}x, σ = ±${state.mc.stdNp[T].toFixed(2)})`,
+              `Promedio MC ${state.mc.runs}x (Corte Día ${T}, σ=±${state.mc.stdNp[T].toFixed(2)})`,
               state.mc.Ns[T],
               state.mc.Nl[T],
               state.mc.Np[T],
@@ -2787,6 +3361,33 @@
               'bg-purple-50/40'
             );
           }
+
+          if (isOvertime) {
+            const curBal = stNs + 2 * stNl + 2 * stNp;
+            advHtml += `
+              <tr class="bg-amber-100/70">
+                <td colspan="7" class="px-3 py-1.5 font-sans text-[11px] font-extrabold uppercase tracking-wider text-amber-950">
+                  Evolución en Tiempo Extra — Día ${day} (Mes ${(day / 30).toFixed(1)}, +${day - T} días)
+                </td>
+              </tr>
+            `;
+            advHtml += advRow(`AEPE (Tiempo Extra Día ${day})`, state.aepe.Ns[day], null, state.aepe.Np[day], state.aepe.X[day], state.aepe.Ns[day] + 2 * state.aepe.Np[day], 'bg-amber-50/30');
+            advHtml += advRow(`EDOs RK4 (Tiempo Extra Día ${day})`, state.rk4.Ns[day], state.rk4.Nl[day], state.rk4.Np[day], state.rk4.X[day], state.rk4.Ns[day] + 2 * state.rk4.Nl[day] + 2 * state.rk4.Np[day], 'bg-teal-50/30');
+            advHtml += advRow(`Corrida Actual Aula (Día ${day})`, stNs, stNl, stNp, stX, curBal, 'bg-amber-50/60');
+            if (state.mc) {
+              const mcBalOt = state.mc.Ns[day] + 2 * state.mc.Nl[day] + 2 * state.mc.Np[day];
+              advHtml += advRow(
+                `Promedio MC ${state.mc.runs}x (Día ${day}, σ=±${state.mc.stdNp[day].toFixed(2)})`,
+                state.mc.Ns[day],
+                state.mc.Nl[day],
+                state.mc.Np[day],
+                state.mc.X[day],
+                mcBalOt,
+                'bg-purple-50/30'
+              );
+            }
+          }
+
           document.getElementById('advanced-tbody').innerHTML = advHtml;
         }
 
@@ -2805,7 +3406,13 @@
           btn.classList.add('bg-amber-500', 'hover:bg-amber-600');
           icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
         } else {
-          txt.textContent = state.currentDay >= state.totalDays ? 'Reiniciar y Correr' : 'Iniciar';
+          if (state.currentDay >= state.runLimitDays) {
+            txt.textContent = 'Reiniciar y Correr';
+          } else if (state.currentDay >= state.designDays) {
+            txt.textContent = 'Continuar (Extra)';
+          } else {
+            txt.textContent = state.currentDay > 0 ? 'Reanudar' : 'Iniciar';
+          }
           btn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
           btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
           icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
@@ -2828,17 +3435,25 @@
       }
 
       function exportCSV() {
-        if (!state.mc) computeMonteCarlo(50);
-        const T = state.totalDays;
+        const maxDay = Math.max(state.designDays, state.currentDay);
+        if (maxDay > state.computedMaxDay) extendDeterministicModelsTo(maxDay);
+        if (!state.mc) {
+          computeMonteCarlo(50, maxDay);
+        } else if (maxDay > state.mc.maxDay) {
+          extendMonteCarloTo(maxDay);
+        }
+
         const rows = [
-          'Dia,Mes,NS_AEPE,NP_AEPE,NL_AEPE_ref,X_AEPE_pct,NS_EDO_RK4,NL_EDO_RK4,NP_EDO_RK4,X_EDO_pct,NS_Aula,NL_Aula,NP_Aula,X_Aula_pct,NS_MC50,NL_MC50,NP_MC50,Std_NP_MC50,X_MC50_pct'
+          'Dia,Mes,Fase,NS_AEPE,NP_AEPE,NL_AEPE_ref,X_AEPE_pct,NS_EDO_RK4,NL_EDO_RK4,NP_EDO_RK4,X_EDO_pct,NS_Aula,NL_Aula,NP_Aula,X_Aula_pct,NS_MC50,NL_MC50,NP_MC50,Std_NP_MC50,X_MC50_pct'
         ];
 
-        for (let day = 0; day <= T; day++) {
+        for (let day = 0; day <= maxDay; day++) {
           const hasStoch = day < state.stoch.days.length;
+          const phaseLbl = day <= state.designDays ? 'Periodo_Base' : 'Tiempo_Extra';
           rows.push([
             day,
             (day / 30).toFixed(4),
+            phaseLbl,
             state.aepe.Ns[day].toFixed(4),
             state.aepe.Np[day].toFixed(4),
             state.aepe.NlRef[day].toFixed(4),
@@ -2863,7 +3478,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `reactor_batch_social_${params.months}m_k1_${params.k1}.csv`;
+        a.download = `reactor_batch_social_${params.months}m_hasta_d${maxDay}_k1_${params.k1}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2883,27 +3498,38 @@
 
         if (state.running) {
           state.simTime += dtSec * state.speed;
-          if (state.simTime >= state.totalDays) {
-            state.simTime = state.totalDays;
+          if (state.simTime >= state.runLimitDays) {
+            state.simTime = state.runLimitDays;
           }
 
-          while (state.currentDay < Math.floor(state.simTime) && state.currentDay < state.totalDays) {
+          while (state.currentDay < Math.floor(state.simTime) && state.currentDay < state.runLimitDays) {
             state.currentDay++;
             stepSimulationOneDay(state.currentDay);
             dayAdvanced = true;
           }
 
-          if (state.currentDay >= state.totalDays) {
+          if (state.currentDay >= state.runLimitDays) {
             state.running = false;
             updatePlayButtonUI();
-            showToast(`Periodo concluido (${state.totalDays} días). Parejas finales en aula: ${state.couples.length}.`, 'success');
+            if (state.currentDay === state.designDays && !state.allowOvertime) {
+              showToast(`Periodo de diseño concluido (Día ${state.designDays}). Parejas en aula: ${state.couples.length}. Puedes extender abajo.`, 'success');
+            } else if (state.currentDay >= state.MAX_OVERTIME_DAYS) {
+              showToast(`Límite máximo de tiempo extra alcanzado (${state.MAX_OVERTIME_DAYS} días / 60 meses).`, 'info');
+            } else {
+              showToast(`Extensión completada hasta Día ${state.currentDay}. Parejas en aula: ${state.couples.length}.`, 'success');
+            }
           }
         }
 
         updatePhysics(dtSec);
         renderClassroom(now);
 
-        document.getElementById('kpi-month').textContent = `Mes ${(state.currentDay / 30).toFixed(1)} · ${formatClock(state.simTime)}`;
+        if (state.currentDay > state.designDays) {
+          document.getElementById('kpi-month').textContent = `Mes ${(state.currentDay / 30).toFixed(1)} · +${state.currentDay - state.designDays}d extra · ${formatClock(state.simTime)}`;
+        } else {
+          document.getElementById('kpi-month').textContent = `Mes ${(state.currentDay / 30).toFixed(1)} · ${formatClock(state.simTime)}`;
+        }
+
         if (dayAdvanced) {
           updateUI(true);
         }
@@ -2912,15 +3538,177 @@
       }
 
       // =========================================================================
-      // 10. EVENT LISTENERS E INTERACCIONES
+      // 10. EVENT LISTENERS E INTERACCIONES (INCL. CLIC EN CANVAS Y TIEMPO EXTRA)
       // =========================================================================
+      function hitTestAgentFromMouseEvent(e) {
+        const m = state.renderMetrics;
+        if (!m) return null;
+        const rect = displayCanvas.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return null;
+
+        const pxX = (e.clientX - rect.left) * (displayCanvas.width / rect.width);
+        const pxY = (e.clientY - rect.top) * (displayCanvas.height / rect.height);
+        const vx = (pxX - m.drawX) / m.scale;
+        const vy = (pxY - m.drawY) / m.scale;
+        const mx = (vx - m.originX) / m.pxPerM;
+        const my = (vy - m.floorTopY) / m.pxPerM;
+
+        let best = null;
+        let bestDist = 0.50; // metros alrededor del centro visual del chibi
+        for (const ag of state.agents) {
+          const dist = Math.hypot(mx - ag.x, my - (ag.y - 0.30));
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = ag;
+          }
+        }
+        return best;
+      }
+
+      displayCanvas.addEventListener('mousemove', (e) => {
+        const hit = hitTestAgentFromMouseEvent(e);
+        state.hoveredAgentId = hit ? hit.id : null;
+        displayCanvas.style.cursor = hit ? 'pointer' : 'default';
+      });
+
+      displayCanvas.addEventListener('mouseleave', () => {
+        state.hoveredAgentId = null;
+        displayCanvas.style.cursor = 'default';
+      });
+
+      displayCanvas.addEventListener('click', (e) => {
+        const hit = hitTestAgentFromMouseEvent(e);
+        if (!hit) return;
+
+        // Si ya estaba seguido, enfocar su campo de texto para editar su nombre
+        const existingSlot = getTrackedSlotByAgentId(hit.id);
+        if (existingSlot !== -1) {
+          const inp = document.getElementById(`input-track-${existingSlot + 1}`);
+          if (inp) {
+            inp.focus();
+            inp.select();
+          }
+          showToast(`Editando a ${getTrackedLabel(existingSlot)} (Individuo #${existingSlot + 1}).`);
+          return;
+        }
+
+        // Elegir slot libre (0 primero, luego 1; si ambos ocupados, reemplaza el 2)
+        let slot = state.tracked[0].agentId === null ? 0 : (state.tracked[1].agentId === null ? 1 : 1);
+        state.tracked[slot].agentId = hit.id;
+        if (!(state.tracked[slot].name || '').trim()) {
+          state.tracked[slot].name = `Sujeto ${slot + 1}`;
+        }
+
+        const inp = document.getElementById(`input-track-${slot + 1}`);
+        if (inp) {
+          inp.value = state.tracked[slot].name;
+          inp.focus();
+          inp.select();
+        }
+        updateTrackedStatusPanels();
+        showToast(`Personaje asignado como Individuo #${slot + 1} (${state.tracked[slot].name}). Escribe su nombre en la barra izquierda.`);
+      });
+
+      // Inputs y botones de seguimiento en barra lateral
+      [0, 1].forEach((slotIdx) => {
+        const inp = document.getElementById(`input-track-${slotIdx + 1}`);
+        const clr = document.getElementById(`btn-clear-track-${slotIdx + 1}`);
+
+        inp.addEventListener('input', (e) => {
+          const val = e.target.value;
+          state.tracked[slotIdx].name = val;
+          if (val.trim().length > 0 && state.tracked[slotIdx].agentId === null) {
+            assignTrackedToRandomSingle(slotIdx, val);
+          } else if (val.trim().length === 0) {
+            state.tracked[slotIdx].agentId = null;
+          }
+          updateTrackedStatusPanels();
+        });
+
+        clr.addEventListener('click', () => {
+          state.tracked[slotIdx].agentId = null;
+          state.tracked[slotIdx].name = '';
+          inp.value = '';
+          updateTrackedStatusPanels();
+        });
+      });
+
+      document.getElementById('btn-assign-random').addEventListener('click', () => {
+        let assignedCount = 0;
+        for (let i = 0; i < 2; i++) {
+          const inp = document.getElementById(`input-track-${i + 1}`);
+          const typed = (inp.value || '').trim();
+          if (typed.length > 0) {
+            state.tracked[i].agentId = null;
+            if (assignTrackedToRandomSingle(i, typed)) assignedCount++;
+          }
+        }
+        // Si ambos campos estaban vacíos, asigna automáticamente Sujeto 1 a un soltero al azar
+        if (assignedCount === 0) {
+          state.tracked[0].agentId = null;
+          if (assignTrackedToRandomSingle(0, 'Sujeto 1')) {
+            const inp1 = document.getElementById('input-track-1');
+            inp1.value = 'Sujeto 1';
+            inp1.focus();
+            inp1.select();
+            assignedCount = 1;
+          }
+        }
+        updateTrackedStatusPanels();
+        showToast(assignedCount === 2 ? 'Ambos nombres asignados a solteros al azar.' : 'Nombre asignado a un soltero al azar.');
+      });
+
+      document.getElementById('btn-toggle-history').addEventListener('click', () => {
+        state.historyOpen = !state.historyOpen;
+        updateEventHistoryUI();
+      });
+
+      document.getElementById('chk-allow-overtime').addEventListener('change', (e) => {
+        state.allowOvertime = e.target.checked;
+        if (state.allowOvertime) {
+          state.runLimitDays = state.MAX_OVERTIME_DAYS;
+          showToast('Tiempo extra continuo activado (sin pausa al llegar a t).');
+        } else {
+          state.runLimitDays = Math.max(state.designDays, state.currentDay);
+        }
+        updatePlayButtonUI();
+        updateUI(false);
+      });
+
+      document.getElementById('btn-extend-3m').addEventListener('click', () => {
+        if (state.currentDay >= state.MAX_OVERTIME_DAYS) return;
+        const nextLimit = Math.min(state.MAX_OVERTIME_DAYS, state.currentDay + 90);
+        state.runLimitDays = nextLimit;
+        extendDeterministicModelsTo(nextLimit);
+        if (state.advancedMode && state.mc) extendMonteCarloTo(nextLimit);
+        state.running = true;
+        updatePlayButtonUI();
+        updateUI(true);
+        showToast(`Corrida extendida +3 meses (hasta el Día ${nextLimit}).`);
+      });
+
+      document.getElementById('btn-extend-inf').addEventListener('click', () => {
+        state.allowOvertime = true;
+        document.getElementById('chk-allow-overtime').checked = true;
+        state.runLimitDays = state.MAX_OVERTIME_DAYS;
+        state.running = true;
+        updatePlayButtonUI();
+        updateUI(true);
+        showToast('Modo Tiempo Extra continuo activado. Pausa manualmente cuando gustes.');
+      });
+
       document.getElementById('toggle-advanced').addEventListener('change', (e) => {
         state.advancedMode = e.target.checked;
         const advSection = document.getElementById('advanced-section');
         const pill = document.getElementById('mode-pill');
+        const horizon = Math.max(state.designDays, state.currentDay);
 
         if (state.advancedMode) {
-          if (!state.mc) computeMonteCarlo(50);
+          if (!state.mc) {
+            computeMonteCarlo(50, horizon);
+          } else if (horizon > state.mc.maxDay) {
+            extendMonteCarloTo(horizon);
+          }
           advSection.classList.remove('hidden');
           pill.textContent = 'Vista Completa: Análisis Avanzado';
           pill.className = 'rounded-full border border-teal-300 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800';
@@ -2991,7 +3779,7 @@
       });
 
       document.getElementById('btn-play').addEventListener('click', () => {
-        if (state.currentDay >= state.totalDays) {
+        if (state.currentDay >= state.runLimitDays) {
           resetSimulation(false);
         }
         state.running = !state.running;
@@ -3000,14 +3788,18 @@
 
       document.getElementById('btn-step').addEventListener('click', () => {
         state.running = false;
-        updatePlayButtonUI();
-        if (state.currentDay < state.totalDays) {
+        if (state.currentDay < state.MAX_OVERTIME_DAYS) {
+          if (state.currentDay >= state.runLimitDays) {
+            state.runLimitDays = state.currentDay + 1;
+          }
           state.currentDay++;
           state.simTime = state.currentDay;
           stepSimulationOneDay(state.currentDay);
+          updatePlayButtonUI();
           updateUI(true);
         } else {
-          showToast('Fin del periodo alcanzado. Pulsa Reiniciar para correr otro lote.');
+          updatePlayButtonUI();
+          showToast('Límite máximo alcanzado. Pulsa Reiniciar para correr otro lote.');
         }
       });
 
@@ -3055,10 +3847,11 @@
       });
 
       document.getElementById('btn-recalc-mc').addEventListener('click', () => {
-        computeMonteCarlo(50);
+        const horizon = Math.max(state.designDays, state.currentDay);
+        computeMonteCarlo(50, horizon);
         updateUI(true);
-        const T = state.totalDays;
-        showToast(`Monte Carlo (50 corridas): N_P final = ${state.mc.Np[T].toFixed(2)} ± ${state.mc.stdNp[T].toFixed(2)}`, 'success');
+        const T = state.designDays;
+        showToast(`Monte Carlo (50 corridas): N_P en corte = ${state.mc.Np[T].toFixed(2)} ± ${state.mc.stdNp[T].toFixed(2)}`, 'success');
       });
 
       document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
